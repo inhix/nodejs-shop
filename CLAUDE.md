@@ -54,18 +54,39 @@ docs/             PROJECT_BRIEF.md, adr/, vendor/, runbooks/, architecture.md
 - Order items snapshot product name, SKU, and unit price at purchase time.
 - Order status changes only through the order state machine in the orders module.
   Card orders: pending_payment -> paid -> fulfilling -> shipped -> delivered.
-  COD orders skip pending_payment. Terminal states: cancelled, refunded.
+  COD orders skip pending_payment; uncollected COD parcels end as returned.
+  Terminal states: cancelled, refunded, returned.
 - Stock reservation runs inside a transaction with row locking (Drizzle `.for('update')`).
   Reservations expire via a scheduled job.
 - Payment status changes only from verified webhooks, never from client redirects.
+  A scheduled reconciliation job checks orders stuck in pending_payment with the provider,
+  in case a webhook was lost.
 - Webhooks: verify signatures on the raw body with constant-time comparison, store processed
   event IDs for idempotency, and ignore stale updates (compare provider modification time).
+- Webhook handlers stay fast: verify, record the state change, write outbox events, respond.
+  Never call external services (Checkbox, SES, Nova Poshta) inside a webhook handler.
+- Never retry a customer-initiated payment automatically. A failed payment is retried only
+  by the customer's own action (same card, another card, or switching to COD).
 - Side effects of state changes (emails, fiscal receipts, stock updates) go through the
   transactional outbox and queued jobs. A failing external service must never block or lose
   an order.
 - Every card payment produces a Checkbox fiscal receipt; every refund produces a return receipt.
 - Products are soft-deleted. IDs are UUIDv7. Every table has created_at and updated_at.
 - Phone numbers are stored in E.164 (`+380...`). Default locale is `uk`, second is `en`.
+
+## Direct calls vs. the queue
+
+Rule of thumb: if a person is waiting for the result, call the external service directly and
+handle failure clearly; if the work is a consequence of something that already happened, put
+it on a BullMQ queue.
+
+- Direct: creating a payment invoice (the customer needs the payment link now); creating a
+  single Nova Poshta waybill from the admin panel (falls back to the queue if Nova Poshta is down).
+- Queued: fiscal receipts, emails, Nova Poshta directory sync, shipment tracking, payment
+  reconciliation, reservation expiry, refunds initiated by staff, bulk waybill creation.
+- Checkout reads Nova Poshta cities and branches from the local Postgres copy, never from the
+  live API.
+- Queued jobs are idempotent, use bounded retries with backoff, and leave failed jobs visible.
 
 ## Code conventions
 
@@ -84,6 +105,19 @@ docs/             PROJECT_BRIEF.md, adr/, vendor/, runbooks/, architecture.md
 - Never edit a migration that has been merged. Create a new one.
 - Migrations never run on app startup; they run as a separate deploy step.
 - Add indexes for every foreign key and for query patterns you introduce.
+
+## Docker and versions
+
+- Each app's Dockerfile is added in the same PR that creates the app.
+- Dockerfiles use multi-stage builds, `turbo prune --docker`, a pinned Node 26 base image
+  (exact version, never `latest`), and a non-root user in the final stage.
+- Next.js apps use `output: 'standalone'`. The API and worker share one image, started with
+  different commands.
+- Keep a `.dockerignore` that excludes `node_modules`, `.env*` (except `.env.example`), and `.git`.
+- Postgres and Redis use the same pinned major versions in Docker Compose, Testcontainers,
+  and AWS. Never use `latest` image tags anywhere.
+- During development, apps run with `pnpm dev`; Docker Compose runs only infrastructure
+  (Postgres, Redis, LocalStack).
 
 ## Redis
 
@@ -113,6 +147,7 @@ docs/             PROJECT_BRIEF.md, adr/, vendor/, runbooks/, architecture.md
 ## Workflow
 
 - One issue -> one branch -> one PR. Branch names: `feat/...`, `fix/...`, `chore/...`, `docs/...`.
+- Every PR description references its issue with `Closes #N` and follows the PR template.
 - For any non-trivial task: propose a plan first and wait for approval before implementing.
 - Keep PRs small and reviewable (aim for under ~400 changed lines excluding generated files).
 - Commits follow Conventional Commits with a scope: `feat(cart): merge guest cart on login`.
