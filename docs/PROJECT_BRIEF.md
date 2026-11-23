@@ -25,6 +25,17 @@ developers, so the process (planning, PRs, CI, documentation) matters as much as
 - Marketplace features (multiple sellers), subscriptions, or loyalty programs.
 - A native mobile app (the API is designed so one could be added later).
 
+### Future extensions (documented, not planned)
+
+- **Subscriptions:** start with provider-managed subscriptions (e.g. LiqPay's built-in
+  recurring payments) and react to webhooks. Only if billing rules outgrow that, move to
+  merchant-initiated charges with saved card tokens, scheduled through BullMQ, with an
+  idempotency key per billing period, a capped retry policy (e.g. retry after 1 and 3 days,
+  notify the customer, then pause), explicit consent at signup, and easy cancellation.
+- **Bulk waybill creation** for many orders at once, processed through the queue.
+- **More carriers** (Ukrposhta, Meest) behind the existing `ShippingProvider` interface.
+- **Meilisearch** if Postgres search stops meeting measured needs.
+
 ## 2. Users and core flows
 
 **Customers** browse and search the catalog, manage a cart (as a guest or signed in),
@@ -202,8 +213,17 @@ in the Phase 1 ADR.
   checks make processing idempotent and order-safe.
 - **Lost side effects:** the transactional outbox guarantees emails, receipts, and stock
   updates happen even if the process crashes mid-flow.
+- **Lost webhooks:** a scheduled reconciliation job checks orders stuck in `pending_payment`
+  directly with the provider.
+- **Failed payments:** never retried automatically. The customer decides whether to try again,
+  use another card, or switch to cash on delivery.
 - **External outages:** Checkbox, Nova Poshta, or SES failures are retried by queued jobs and
-  never block checkout.
+  never block checkout. The order is recorded first and follow-up work completes afterward
+  (eventual consistency).
+- **Direct vs. queued:** if a person is waiting for the result (payment link, a single
+  waybill from the admin panel), the API calls the service directly; if the work is a
+  consequence of something that already happened (receipts, emails, tracking, directory
+  sync), it goes through the queue. Full list in `CLAUDE.md`.
 - **Scaling:** stateless API, sessions in Redis, horizontal scaling on ECS, read replicas
   if needed.
 
@@ -237,6 +257,15 @@ least-privilege IAM role per service; secrets injected at runtime; no long-lived
 gateway strategy documented in an ADR. Single AWS account with separate environments;
 multi-account via Organizations noted as the larger-scale approach.
 
+**Container images:** each app's Dockerfile is added in the PR that creates the app, so CI
+builds and scans real images from day one. Multi-stage builds, `turbo prune --docker`,
+Next.js standalone output, pinned Node 26 base image, non-root user. API and worker share
+one image with different start commands.
+
+**Version consistency:** Postgres and Redis use the same pinned major versions in Docker
+Compose, Testcontainers, and AWS (ElastiCache for Redis OSS is on the 7.x line). No `latest`
+tags anywhere.
+
 **Kubernetes:** not used in production. An optional Helm chart and local kind/k3d setup in
 `infra/k8s/` may be added after the core project is complete.
 
@@ -253,6 +282,10 @@ multi-account via Organizations noted as the larger-scale approach.
 Critical scenarios with dedicated tests: concurrent purchase of the last item, duplicate
 webhooks, payment failure, reservation expiry, Checkbox outage with later retry, COD expiry,
 refund producing a return receipt.
+
+Caching is added only where measured. At least one real case (e.g. Nova Poshta branch
+lookups or the category menu) is cached in Redis, with before/after response times recorded
+in the docs.
 
 Coverage thresholds are enforced in CI for core modules (checkout, payments, orders,
 inventory), not chased to 100% everywhere.
@@ -292,16 +325,33 @@ schema changed; docs or ADR updated if behavior or decisions changed; CI green.
 
 ## 10. Roadmap
 
+### Phase 0 PR order
+
+Each step is its own issue and PR, in this order, because each depends on the previous one:
+
+1. Monorepo and tooling (pnpm, Turborepo, TS configs, ESLint, Prettier, Husky, commitlint,
+   Node 26 pinned via `.nvmrc`, `engines`, `packageManager`)
+2. Docker Compose for local infrastructure (Postgres, Redis 7.x, LocalStack)
+3. CI pipeline, then branch protection on `main`
+4. NestJS API skeleton (health check, config validation) with its Dockerfile
+5. Next.js storefront and admin skeletons, each with its Dockerfile
+6. Shared contracts package and initial ADRs
+
+AWS account setup, Terraform state bootstrap, and GitHub OIDC follow once the code
+foundation is in place.
+
+### Phases
+
 | Phase | Focus | Key deliverables |
 |---|---|---|
 | 0. Foundations | Tooling and pipeline | Monorepo, TS/ESLint/Prettier/Husky/commitlint, Docker Compose, CI, branch protection, Renovate/CodeQL, AWS account with MFA and budgets, Terraform state bootstrap, GitHub OIDC, initial ADRs |
 | 1. Domain modeling | Data and contracts | ERD, order state machine, Drizzle schema and first migrations, Zod contracts, OpenAPI + Scalar |
 | 2. Backend core | Auth and catalog | Sessions, RBAC, rate limiting, catalog CRUD, search, S3 presigned uploads, Problem Details errors, request IDs, config from Secrets Manager |
-| 3. Checkout and payments | The hard part | Guest/user carts and merge, stock reservation with locking, mono adapter, LiqPay adapter, idempotent webhooks, outbox, reservation expiry, signed webhook simulator |
+| 3. Checkout and payments | The hard part | Guest/user carts and merge, stock reservation with locking, mono adapter, LiqPay adapter, idempotent webhooks, outbox, reservation expiry, payment reconciliation job, signed webhook simulator |
 | 4. Orders and integrations | Post-purchase | Order management, refunds, discount codes, audit log, Checkbox fiscalization, Nova Poshta waybills and tracking, SES email |
 | 5. Storefront | Customer UI | Catalog, product pages, cart, checkout with Nova Poshta picker and payment choice, account, i18n, SEO, accessibility |
 | 6. Admin | Staff UI | Dashboard and reports, products, orders, waybills, customers, discounts |
-| 7. Hardening | Quality and security | Playwright E2E, coverage thresholds, OWASP review, WAF rules, IAM review, k6 load tests, index tuning |
+| 7. Hardening | Quality and security | Playwright E2E, coverage thresholds, OWASP review, WAF rules, IAM review, k6 load tests, index tuning, measured Redis caching |
 | 8. Deployment | Production | Full Terraform stack, ECS services, migration pipeline, staging and production, alarms, graceful shutdown, health checks |
 | 9. Presentation | Polish | README with demo and test credentials, architecture diagrams, notable decisions, runbooks, known limitations |
 | Bonus | Optional | Helm chart and local Kubernetes setup |
