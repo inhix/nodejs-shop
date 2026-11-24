@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+dist
+.next
+coverage
+.turbo
+
+# Long-form docs: Prettier pads every Markdown table, so a one-row edit rewrites the whole table.
+docs

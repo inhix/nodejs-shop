@@ -1,15 +1,19 @@
 ## Summary
+
 <!-- What changed and why, in 1–3 sentences. -->
 
 Closes #
 
 ## Type
-- [ ] feat  - [ ] fix  - [ ] chore  - [ ] docs  - [ ] refactor  - [ ] test
+
+- [ ] feat - [ ] fix - [ ] chore - [ ] docs - [ ] refactor - [ ] test
 
 ## How it was tested
+
 <!-- Unit / integration (Testcontainers) / E2E. List the key scenarios. -->
 
 ## Checklist
+
 - [ ] Lint, typecheck, and relevant tests pass locally
 - [ ] New endpoints have integration tests, including authorization failures
 - [ ] External input validated with Zod; shared shapes come from `packages/contracts`
@@ -22,4 +26,5 @@ Closes #
 - [ ] PR is under ~400 changed lines (excluding generated files), or the reason is explained
 
 ## Notes for reviewers
+
 <!-- Trade-offs, follow-ups, anything risky. Screenshots for UI changes. -->

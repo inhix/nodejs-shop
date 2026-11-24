@@ -10,7 +10,8 @@ import { readFileSync } from 'node:fs';
 const BLOCKED = [
   {
     pattern: /\b(terraform|tofu)\s+(apply|destroy|import)\b/,
-    reason: 'Terraform apply/destroy/import must be run by a human. Run `terraform plan` and report the result instead.',
+    reason:
+      'Terraform apply/destroy/import must be run by a human. Run `terraform plan` and report the result instead.',
   },
   {
     pattern: /\b(terraform|tofu)\s+state\s+(rm|mv|push|replace-provider)\b/,
@@ -26,15 +27,18 @@ const BLOCKED = [
   },
   {
     pattern: /\bgit\s+(commit|push)\b[^;&|]*--no-verify\b/,
-    reason: 'Skipping git hooks (--no-verify) is not allowed. Fix the lint, type, or commit message issue instead.',
+    reason:
+      'Skipping git hooks (--no-verify) is not allowed. Fix the lint, type, or commit message issue instead.',
   },
   {
     pattern: /\bdrizzle-kit\s+push\b/,
-    reason: 'Schema changes must go through generated, committed migrations (drizzle-kit generate), not drizzle-kit push.',
+    reason:
+      'Schema changes must go through generated, committed migrations (drizzle-kit generate), not drizzle-kit push.',
   },
   {
     pattern: /\b(drop|truncate)\s+(database|schema|table)\b/i,
-    reason: 'Destructive SQL (DROP/TRUNCATE) is not allowed. Write a migration and ask the user to review it.',
+    reason:
+      'Destructive SQL (DROP/TRUNCATE) is not allowed. Write a migration and ask the user to review it.',
   },
   {
     pattern: /\brm\s+-[a-zA-Z]*r[a-zA-Z]*\s+(\/|~|\$HOME|\.\.)(\/?\s|\/?$)/,
@@ -45,9 +49,13 @@ const BLOCKED = [
 // AWS: allow only read-only actions (describe-*, list-*, get-*, and `s3 ls`).
 const READ_ONLY_AWS_ACTION = /^(describe|list|get|help|wait)/;
 
+/**
+ * @param {string} command
+ * @returns {string | null} The reason to block, or null if the command is allowed.
+ */
 function checkAws(command) {
   const matches = command.matchAll(/\baws\s+([a-z0-9-]+)\s+([a-z0-9-]+)/g);
-  for (const [, service, action] of matches) {
+  for (const [, service = '', action = ''] of matches) {
     if (service === 's3' && action === 'ls') continue;
     if (service === 'sts' && action === 'get-caller-identity') continue;
     if (!READ_ONLY_AWS_ACTION.test(action)) {
@@ -57,16 +65,22 @@ function checkAws(command) {
   return null;
 }
 
+/** @typedef {{ tool_name?: unknown, tool_input?: { command?: unknown } }} HookInput */
+
 function main() {
-  let input;
+  /** @type {unknown} */
+  let parsed;
   try {
-    input = JSON.parse(readFileSync(0, 'utf8'));
+    parsed = JSON.parse(readFileSync(0, 'utf8'));
   } catch {
     process.exit(0); // Not our concern if the payload is unreadable; let Claude Code handle it.
   }
+  if (typeof parsed !== 'object' || parsed === null) process.exit(0);
+  const input = /** @type {HookInput} */ (parsed);
 
-  if (input?.tool_name !== 'Bash') process.exit(0);
-  const command = String(input?.tool_input?.command ?? '');
+  if (input.tool_name !== 'Bash') process.exit(0);
+  const rawCommand = input.tool_input?.command;
+  const command = typeof rawCommand === 'string' ? rawCommand : '';
 
   for (const { pattern, reason } of BLOCKED) {
     if (pattern.test(command)) {
