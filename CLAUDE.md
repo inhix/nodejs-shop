@@ -184,6 +184,10 @@ pnpm infra:down                   # stop them (data kept)
 pnpm infra:reset                  # stop them and DELETE local data volumes
 ```
 
+CI (`.github/workflows/`): `verify` runs format check, lint, typecheck, test, and build on every
+PR and push to `main`; `pr-title` runs commitlint on the PR title, because it becomes the squash
+commit message. Both are required checks on `main`. Actions are pinned by commit SHA.
+
 - Shared versions used by several packages live in the `catalog` in `pnpm-workspace.yaml`;
   reference them with `"catalog:"`.
 - pnpm only installs package versions published at least 7 days ago (`minimumReleaseAge`).

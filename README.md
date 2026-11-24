@@ -1,5 +1,7 @@
 # nodejs-shop
 
+[![CI](https://github.com/inhix/nodejs-shop/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/inhix/nodejs-shop/actions/workflows/ci.yml)
+
 A production-grade e-commerce shop for the Ukrainian market: a NestJS modular monolith with
 Next.js storefront and admin apps, in a pnpm + Turborepo monorepo.
 See [`docs/PROJECT_BRIEF.md`](docs/PROJECT_BRIEF.md) for scope, stack, and roadmap.
