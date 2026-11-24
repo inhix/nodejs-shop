@@ -19,7 +19,7 @@ correctness, clarity, and consistency over speed.
 - Frontends: Next.js App Router (storefront, admin), Tailwind, shadcn/ui, React Hook Form
 - Integrations: plata by mono + LiqPay (own clients), Checkbox (fiscal receipts), Nova Poshta
 - Infra: AWS (ECS Fargate, RDS, ElastiCache for Redis OSS, S3/CloudFront, SES), Terraform
-- Tests: Vitest, Supertest, Testcontainers, MSW/nock, Playwright, k6
+- Tests: Vitest, Fastify `inject()` for HTTP, Testcontainers, MSW/nock, Playwright, k6
 
 ## Repository layout
 
@@ -182,11 +182,15 @@ pnpm --filter <package> <script>  # run a script in one package, e.g. --filter @
 pnpm infra:up                     # start Postgres and Redis, wait until healthy
 pnpm infra:down                   # stop them (data kept)
 pnpm infra:reset                  # stop them and DELETE local data volumes
+pnpm --filter @shop/api dev       # API with reload on http://127.0.0.1:3000
+pnpm --filter @shop/api exec vitest run test/app.spec.ts   # a single test file
+docker build -f apps/api/Dockerfile -t shop-api .         # API image (from repo root)
 ```
 
 CI (`.github/workflows/`): `verify` runs format check, lint, typecheck, test, and build on every
 PR and push to `main`; `pr-title` runs commitlint on the PR title, because it becomes the squash
-commit message. Both are required checks on `main`. Actions are pinned by commit SHA.
+commit message. `docker-build` builds the API image and
+waits for its health check. All three are required checks on `main`. Actions are pinned by commit SHA.
 
 - Shared versions used by several packages live in the `catalog` in `pnpm-workspace.yaml`;
   reference them with `"catalog:"`.
@@ -198,4 +202,4 @@ commit message. Both are required checks on `main`. Actions are pinned by commit
 Local infrastructure reads `.env` (copy `.env.example`). Image tags in `docker-compose.yml`
 must stay in sync with Testcontainers and AWS.
 
-To be added with later steps: single test file, migrations.
+To be added with later steps: migrations.

@@ -274,7 +274,7 @@ tags anywhere.
 | Level | Tools | Scope |
 |---|---|---|
 | Unit | Vitest | Services, pure domain logic, state machine, signature verification |
-| Integration | Supertest + Testcontainers | Every endpoint against real Postgres and Redis, including authorization failures |
+| Integration | Fastify `inject()` + Testcontainers | Every endpoint against real Postgres and Redis, including authorization failures |
 | External APIs | MSW / nock + signed webhook simulator | monobank, LiqPay, Checkbox, Nova Poshta |
 | End-to-end | Playwright + axe | Browse -> cart -> checkout -> order visible in admin; accessibility checks |
 | Load | k6 | Catalog and checkout endpoints; results documented |

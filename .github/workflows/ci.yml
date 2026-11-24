@@ -39,3 +39,28 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  docker-build:
+    name: docker-build
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build API image
+        run: docker build --file apps/api/Dockerfile --tag shop-api:ci .
+
+      # Starts the image and waits for its HEALTHCHECK, so a broken runtime fails CI.
+      - name: Smoke test API image
+        run: |
+          docker run --detach --name api shop-api:ci
+          for _ in $(seq 1 30); do
+            if [ "$(docker inspect --format '{{.State.Health.Status}}' api)" = healthy ]; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs api
+          exit 1
