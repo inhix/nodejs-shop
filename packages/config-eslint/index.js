@@ -4,7 +4,10 @@ import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
 /** Files whose tooling requires a default export (config files, Next.js routes, etc.). */
-const DEFAULT_EXPORT_ALLOWED = ['**/eslint.config.{js,mjs,cjs,ts,mts}'];
+const DEFAULT_EXPORT_ALLOWED = [
+  '**/eslint.config.{js,mjs,cjs,ts,mts}',
+  '**/vitest.config.{js,mjs,ts,mts}',
+];
 
 /**
  * Shared, type-aware ESLint config. Enforces the code conventions in CLAUDE.md.
@@ -34,6 +37,8 @@ export function createBaseConfig(tsconfigRootDir) {
         // Disable per line with a reason: `// eslint-disable-next-line ... -- why it is safe`.
         '@typescript-eslint/no-non-null-assertion': 'error',
         '@typescript-eslint/consistent-type-imports': 'error',
+        // NestJS modules are classes that only carry a decorator.
+        '@typescript-eslint/no-extraneous-class': ['error', { allowWithDecorator: true }],
         // Named exports only.
         'no-restricted-exports': [
           'error',
