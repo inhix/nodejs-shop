@@ -6,14 +6,20 @@ See [`docs/PROJECT_BRIEF.md`](docs/PROJECT_BRIEF.md) for scope, stack, and roadm
 
 ## Getting started
 
-Requirements: Node.js 26 (version in `.nvmrc`) and pnpm (version pinned in `package.json`).
+Requirements: Node.js 26 (version in `.nvmrc`), pnpm (version pinned in `package.json`), and
+Docker with Docker Compose.
 
 ```sh
-nvm use          # or fnm use / volta; any tool that reads .nvmrc
-pnpm install     # also installs the git hooks
+nvm use            # or fnm use / volta; any tool that reads .nvmrc
+pnpm install       # also installs the git hooks
+cp .env.example .env
+pnpm infra:up      # Postgres and Redis on localhost, waits until healthy
 pnpm lint
 pnpm typecheck
 ```
+
+`pnpm infra:down` stops the containers and keeps data. `pnpm infra:reset` stops them and
+**deletes** the local database volume.
 
 ## Repository layout
 

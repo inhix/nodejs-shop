@@ -304,8 +304,10 @@ inventory), not chased to 100% everywhere.
   Docker build + Trivy scan; `terraform plan` on PRs; on merge deploy to staging with
   migrations as a one-off ECS task; production on tagged releases.
 - **Security scanning:** CodeQL, Renovate, Trivy.
-- **Local development:** Docker Compose with Postgres, Redis 7.x, and LocalStack (S3, SES,
-  Secrets Manager); Cloudflare Tunnel for receiving real sandbox webhooks.
+- **Local development:** Docker Compose with Postgres and Redis 7.x; Cloudflare Tunnel for
+  receiving real sandbox webhooks. Local AWS emulation (S3, SES) is chosen in an ADR when first
+  needed: LocalStack now requires an account and auth token, and its free plan is
+  non-commercial only.
 
 ### Definition of Done
 
@@ -331,7 +333,7 @@ Each step is its own issue and PR, in this order, because each depends on the pr
 
 1. Monorepo and tooling (pnpm, Turborepo, TS configs, ESLint, Prettier, Husky, commitlint,
    Node 26 pinned via `.nvmrc`, `engines`, `packageManager`)
-2. Docker Compose for local infrastructure (Postgres, Redis 7.x, LocalStack)
+2. Docker Compose for local infrastructure (Postgres, Redis 7.x)
 3. CI pipeline, then branch protection on `main`
 4. NestJS API skeleton (health check, config validation) with its Dockerfile
 5. Next.js storefront and admin skeletons, each with its Dockerfile
