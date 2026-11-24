@@ -334,7 +334,7 @@ Each step is its own issue and PR, in this order, because each depends on the pr
 1. Monorepo and tooling (pnpm, Turborepo, TS configs, ESLint, Prettier, Husky, commitlint,
    Node 26 pinned via `.nvmrc`, `engines`, `packageManager`)
 2. Docker Compose for local infrastructure (Postgres, Redis 7.x)
-3. CI pipeline, then branch protection on `main`
+3. CI pipeline, then its checks required by the `main` ruleset
 4. NestJS API skeleton (health check, config validation) with its Dockerfile
 5. Next.js storefront and admin skeletons, each with its Dockerfile
 6. Shared contracts package and initial ADRs
