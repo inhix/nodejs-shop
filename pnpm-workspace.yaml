@@ -1,0 +1,16 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Versions shared by several workspace packages. Reference them with "catalog:".
+catalog:
+  '@types/node': 26.6.6
+  eslint: 10.15.0
+  typescript: 6.0.3
+
+# Fail install when the Node version does not satisfy "engines".
+engineStrict: true
+# `pnpm add` saves exact versions (no ^ or ~).
+saveExact: true
+# Only resolve package versions published at least 7 days ago (minutes).
+minimumReleaseAge: 10080

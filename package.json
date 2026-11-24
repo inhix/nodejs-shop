@@ -1,0 +1,79 @@
+{
+  "name": "nodejs-shop",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.21.0",
+  "engines": {
+    "node": ">=26.13.1 <27"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint && eslint --max-warnings=0 .",
+    "typecheck": "turbo run typecheck && tsc --noEmit",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.4",
+    "@commitlint/config-conventional": "21.2.4",
+    "@shop/config-eslint": "workspace:*",
+    "@shop/config-ts": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.1",
+    "prettier": "3.10.1",
+    "turbo": "2.11.11",
+    "typescript": "catalog:"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}": [
+      "eslint --fix --max-warnings=0 --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css}": "prettier --write"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ],
+    "rules": {
+      "scope-empty": [
+        2,
+        "never"
+      ],
+      "scope-enum": [
+        2,
+        "always",
+        [
+          "catalog",
+          "cart",
+          "checkout",
+          "orders",
+          "payments",
+          "inventory",
+          "users",
+          "shipping",
+          "fiscalization",
+          "notifications",
+          "api",
+          "storefront",
+          "admin",
+          "contracts",
+          "api-client",
+          "ui",
+          "config",
+          "infra",
+          "ci",
+          "deps",
+          "repo",
+          "docs",
+          "project"
+        ]
+      ]
+    }
+  }
+}

@@ -168,5 +168,24 @@ it on a BullMQ queue.
 
 ## Commands
 
-To be filled in once the monorepo is scaffolded (dev, build, lint, typecheck, test,
-single test file, migrations, docker compose).
+Run from the repo root. Node version comes from `.nvmrc`; pnpm version from `packageManager`.
+
+```
+pnpm install                      # install all workspaces (fails on the wrong Node version)
+pnpm dev                          # run all apps in dev mode
+pnpm build                        # build all packages and apps
+pnpm lint                         # ESLint in every package, then root-level files
+pnpm typecheck                    # tsc --noEmit in every package, then root-level files
+pnpm test                         # tests in every package
+pnpm format / pnpm format:check   # Prettier write / check (docs/ is excluded)
+pnpm --filter <package> <script>  # run a script in one package, e.g. --filter @shop/config-eslint lint
+```
+
+- Shared versions used by several packages live in the `catalog` in `pnpm-workspace.yaml`;
+  reference them with `"catalog:"`.
+- pnpm only installs package versions published at least 7 days ago (`minimumReleaseAge`).
+- Git hooks: `pre-commit` runs lint-staged; `commit-msg` runs commitlint. The allowed commit
+  scopes are listed in the `commitlint` field of the root `package.json`; add a scope there
+  when introducing a new module or package.
+
+To be added with later steps: single test file, migrations, docker compose.
