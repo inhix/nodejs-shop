@@ -117,7 +117,7 @@ it on a BullMQ queue.
 - Postgres and Redis use the same pinned major versions in Docker Compose, Testcontainers,
   and AWS. Never use `latest` image tags anywhere.
 - During development, apps run with `pnpm dev`; Docker Compose runs only infrastructure
-  (Postgres, Redis, LocalStack).
+  (Postgres, Redis). Local AWS emulation (S3, SES) is decided in an ADR when first needed.
 
 ## Redis
 
@@ -179,6 +179,9 @@ pnpm typecheck                    # tsc --noEmit in every package, then root-lev
 pnpm test                         # tests in every package
 pnpm format / pnpm format:check   # Prettier write / check (docs/ is excluded)
 pnpm --filter <package> <script>  # run a script in one package, e.g. --filter @shop/config-eslint lint
+pnpm infra:up                     # start Postgres and Redis, wait until healthy
+pnpm infra:down                   # stop them (data kept)
+pnpm infra:reset                  # stop them and DELETE local data volumes
 ```
 
 - Shared versions used by several packages live in the `catalog` in `pnpm-workspace.yaml`;
@@ -188,4 +191,7 @@ pnpm --filter <package> <script>  # run a script in one package, e.g. --filter @
   scopes are listed in the `commitlint` field of the root `package.json`; add a scope there
   when introducing a new module or package.
 
-To be added with later steps: single test file, migrations, docker compose.
+Local infrastructure reads `.env` (copy `.env.example`). Image tags in `docker-compose.yml`
+must stay in sync with Testcontainers and AWS.
+
+To be added with later steps: single test file, migrations.

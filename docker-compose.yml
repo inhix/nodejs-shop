@@ -1,0 +1,42 @@
+# Local development infrastructure only. Apps run on the host with `pnpm dev`.
+# Image versions must match AWS (RDS, ElastiCache) and Testcontainers; see CLAUDE.md.
+name: nodejs-shop
+
+services:
+  postgres:
+    # Newest major generally available on RDS. Debian (glibc) image, not Alpine (musl),
+    # so collation and text sorting match RDS.
+    image: postgres:18.7-trixie
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-shop}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shop}
+      POSTGRES_DB: ${POSTGRES_DB:-shop}
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      # Postgres 18+ images keep data in a version-specific subdirectory of this path.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    # Closest to ElastiCache for Redis OSS 7.1 (7.0-compatible); avoids 7.4-only features.
+    image: redis:7.2.17
+    # Local cache and queue data are disposable: no RDB snapshots, no AOF.
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
