@@ -31,6 +31,13 @@ ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=3000
 WORKDIR /app
+# Install Debian security fixes released since the Node base image was last rebuilt.
+RUN apt-get update \
+ && apt-get upgrade --yes --no-install-recommends \
+ && rm -rf /var/lib/apt/lists/*
+# The app never runs npm or npx. Removing them shrinks the attack surface and drops npm's own
+# bundled dependencies, which vulnerability scanners would otherwise report.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 # Files stay owned by root, so the app user cannot modify its own code.
 COPY --from=builder /prod/api/package.json ./package.json
 COPY --from=builder /prod/api/node_modules ./node_modules

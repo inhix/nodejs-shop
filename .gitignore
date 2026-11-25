@@ -158,3 +158,6 @@ vite.config.ts.timestamp-*
 
 # macOS
 .DS_Store
+.trivy-cache
+trivy.sarif
+shop-api.tar

@@ -1,0 +1,7 @@
+# Vulnerabilities accepted after review. One CVE per line, each with a comment above it:
+# why it does not affect us, who accepted it, and an expiry date. Trivy supports
+# `exp:YYYY-MM-DD` after the ID; after that date the CVE fails the scan again.
+#
+# Example:
+# # Only reachable through feature X, which we do not use. Accepted 2026-11-25.
+# CVE-2026-12345 exp:2027-02-25
