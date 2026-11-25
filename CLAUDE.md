@@ -212,7 +212,8 @@ so are CodeQL (`codeql.yml`) and `dependency-review`. Actions are pinned by comm
   scopes are listed in the `commitlint` field of the root `package.json`; add a scope there
   when introducing a new module or package.
 
-Local infrastructure reads `.env` (copy `.env.example`). Image tags in `docker-compose.yml`
+Local infrastructure and `pnpm dev` read the root `.env` (copy `.env.example`); production,
+tests, and the Docker image read the real environment only. Image tags in `docker-compose.yml`
 must stay in sync with Testcontainers and AWS.
 
 To be added with later steps: migrations.
