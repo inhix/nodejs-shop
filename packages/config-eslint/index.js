@@ -1,5 +1,7 @@
 import js from '@eslint/js';
+import nextPlugin from '@next/eslint-plugin-next';
 import prettier from 'eslint-config-prettier';
+import reactHooks from 'eslint-plugin-react-hooks';
 import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
@@ -59,5 +61,32 @@ export function createBaseConfig(tsconfigRootDir) {
       rules: { 'no-restricted-exports': 'off' },
     },
     prettier,
+  );
+}
+
+/** Next.js files that the framework requires to have a default export. */
+const NEXT_DEFAULT_EXPORTS = [
+  '**/next.config.{js,mjs,ts}',
+  '**/postcss.config.{js,mjs}',
+  '**/app/**/{page,layout,template,default,loading,error,global-error,not-found}.tsx',
+];
+
+/**
+ * The base config plus Next.js and React hooks rules, for apps/storefront and apps/admin.
+ * eslint-config-next is not used: it bundles plugins that do not support ESLint 10 yet
+ * (react, import, jsx-a11y). See docs/adr/0008-nextjs-frontends.md.
+ *
+ * @param {string} tsconfigRootDir Absolute path of the app root; pass `import.meta.dirname`.
+ */
+export function createNextConfig(tsconfigRootDir) {
+  return defineConfig(
+    { ignores: ['next-env.d.ts'] },
+    createBaseConfig(tsconfigRootDir),
+    nextPlugin.configs['core-web-vitals'],
+    reactHooks.configs.flat.recommended,
+    {
+      files: NEXT_DEFAULT_EXPORTS,
+      rules: { 'no-restricted-exports': 'off' },
+    },
   );
 }

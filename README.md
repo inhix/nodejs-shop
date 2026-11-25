@@ -26,7 +26,7 @@ pnpm typecheck
 ## Repository layout
 
 ```
-apps/        api, storefront, admin (added in Phase 0 steps 4–5)
+apps/        api (NestJS), storefront (Next.js); admin to follow
 packages/    contracts (Zod + OpenAPI), api-client (generated), config-ts, config-eslint; ui to follow
 docs/        project brief, ADRs, vendor API docs, runbooks
 ```
