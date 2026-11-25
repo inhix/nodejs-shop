@@ -24,5 +24,6 @@ it is built this way, so a later reader (or reviewer) does not have to guess or 
 | [0005](0005-drizzle-over-prisma.md) | Drizzle ORM over Prisma | Accepted |
 | [0006](0006-redis-and-node-redis.md) | Redis 7.2 OSS with the node-redis client | Accepted |
 | [0007](0007-contracts-pipeline.md) | Contracts pipeline: Zod -> OpenAPI -> generated client | Accepted |
+| [0008](0008-nextjs-frontends.md) | Next.js App Router for the storefront and admin | Accepted |
 
 Planned topics are listed in `docs/PROJECT_BRIEF.md`, section 11.

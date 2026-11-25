@@ -99,6 +99,8 @@ it on a BullMQ queue.
 - API errors use RFC 9457 Problem Details via the global exception filter.
 - Logging: Pino, structured, with request ID. Never log secrets, tokens, card data, or full PII.
 - Named exports only, except where a framework requires default exports (Next.js pages).
+- Next.js changes quickly: before writing Next.js code, check the docs bundled with the installed
+  version in `apps/<app>/node_modules/next/dist/docs/` instead of relying on memory.
 - Prefer small, focused functions and explicit types on public module APIs.
 
 ## Database
@@ -189,15 +191,17 @@ pnpm infra:up                     # start Postgres and Redis, wait until healthy
 pnpm infra:down                   # stop them (data kept)
 pnpm infra:reset                  # stop them and DELETE local data volumes
 pnpm --filter @shop/api dev       # API with reload on http://127.0.0.1:3000
+pnpm --filter @shop/storefront dev   # storefront on http://127.0.0.1:3001
 pnpm --filter @shop/api exec vitest run test/app.spec.ts   # a single test file
 pnpm --filter @shop/api exec vitest run test/health.int.spec.ts   # integration (needs Docker)
 docker build -f apps/api/Dockerfile -t shop-api .         # API image (from repo root)
+docker build -f apps/storefront/Dockerfile -t shop-storefront .   # storefront image
 ```
 
 CI (`.github/workflows/`): `verify` runs format check, lint, typecheck, test, and build on every
 PR and push to `main`; `pr-title` runs commitlint on the PR title, because it becomes the squash
-commit message. `docker-build` builds the API image and
-waits for its health check, then scans the image with Trivy. All three are required checks on `main`;
+commit message. `docker-build` builds every app image in a matrix,
+waits for each health check, then scans each image with Trivy. All three are required checks on `main`;
 so are CodeQL (`codeql.yml`) and `dependency-review`. Actions are pinned by commit SHA. Renovate
 (`renovate.json`) opens dependency update PRs weekly.
 
