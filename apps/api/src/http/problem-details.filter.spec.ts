@@ -1,7 +1,7 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
 
-import { toProblemDetails } from './problem-details.filter.js';
+import { ProblemException, toProblemDetails } from './problem-details.filter.js';
 
 describe('toProblemDetails', () => {
   it('maps an HttpException to its status with a detail message', () => {
@@ -29,6 +29,21 @@ describe('toProblemDetails', () => {
       status: 500,
       instance: '/x',
       requestId: 'r2',
+    });
+  });
+
+  it('adds ProblemException extensions without letting them replace standard members', () => {
+    const exception = new ProblemException(HttpStatus.SERVICE_UNAVAILABLE, {
+      checks: { postgres: 'down' },
+      status: 200,
+    });
+    expect(toProblemDetails(exception, '/health/ready', 'r3')).toEqual({
+      type: 'about:blank',
+      title: 'Service Unavailable',
+      status: 503,
+      instance: '/health/ready',
+      requestId: 'r3',
+      checks: { postgres: 'down' },
     });
   });
 });

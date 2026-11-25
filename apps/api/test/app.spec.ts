@@ -9,7 +9,15 @@ describe('API (HTTP)', () => {
   let app: NestFastifyApplication;
 
   beforeAll(async () => {
-    app = await createApp(parseConfig({ NODE_ENV: 'test', LOG_LEVEL: 'silent' }));
+    // No database or Redis needed: the pool connects lazily and Redis in the background.
+    app = await createApp(
+      parseConfig({
+        NODE_ENV: 'test',
+        LOG_LEVEL: 'silent',
+        DATABASE_URL: 'postgres://test:test@127.0.0.1:1/test',
+        REDIS_URL: 'redis://127.0.0.1:1',
+      }),
+    );
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   });

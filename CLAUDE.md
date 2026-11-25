@@ -184,6 +184,7 @@ pnpm infra:down                   # stop them (data kept)
 pnpm infra:reset                  # stop them and DELETE local data volumes
 pnpm --filter @shop/api dev       # API with reload on http://127.0.0.1:3000
 pnpm --filter @shop/api exec vitest run test/app.spec.ts   # a single test file
+pnpm --filter @shop/api exec vitest run test/health.int.spec.ts   # integration (needs Docker)
 docker build -f apps/api/Dockerfile -t shop-api .         # API image (from repo root)
 ```
 
