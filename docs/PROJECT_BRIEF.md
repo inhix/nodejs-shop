@@ -360,12 +360,14 @@ foundation is in place.
 
 ## 11. Planned ADRs
 
-0001 Modular monolith · 0002 Monorepo with pnpm and Turborepo · 0003 NestJS on Fastify ·
-0004 PostgreSQL · 0005 Drizzle over Prisma · 0006 Redis over Valkey · 0007 Session-based
-auth · 0008 Payment provider abstraction (mono + LiqPay, in-house clients) ·
-0009 Fiscalization via Checkbox · 0010 Nova Poshta and shipping abstraction ·
-0011 AWS with ECS Fargate · 0012 Terraform · 0013 No Kubernetes in production ·
-0014 NAT and networking strategy
+ADRs are numbered in the order they are accepted; the index is `docs/adr/README.md`.
+Accepted so far: modular monolith, monorepo with pnpm and Turborepo, NestJS on Fastify,
+PostgreSQL, Drizzle over Prisma, Redis and node-redis.
+
+Planned topics (unordered): contracts pipeline (Zod -> OpenAPI -> client) · session-based
+auth · payment provider abstraction (mono + LiqPay, in-house clients) · fiscalization via
+Checkbox · Nova Poshta and shipping abstraction · order state machine · local AWS emulation ·
+AWS with ECS Fargate · Terraform · no Kubernetes in production · NAT and networking strategy
 
 ## 12. Open questions
 
