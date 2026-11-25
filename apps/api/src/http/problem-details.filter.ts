@@ -12,6 +12,21 @@ export interface ProblemDetails {
   detail?: string;
   instance: string;
   requestId?: string;
+  /** RFC 9457 extension members, e.g. `checks` on a failed readiness probe. */
+  [extension: string]: unknown;
+}
+
+/**
+ * A deliberate error response with extra Problem Details members. It is part of normal
+ * operation (e.g. readiness reporting 503), so the filter does not log it as unhandled.
+ */
+export class ProblemException extends HttpException {
+  constructor(
+    status: HttpStatus,
+    readonly extensions: Readonly<Record<string, unknown>>,
+  ) {
+    super(STATUS_CODES[status] ?? 'Error', status);
+  }
 }
 
 export function toProblemDetails(
@@ -22,6 +37,8 @@ export function toProblemDetails(
   const status =
     exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
   const problem: ProblemDetails = {
+    // Extensions go first, so they cannot replace type, title, status or instance.
+    ...(exception instanceof ProblemException && exception.extensions),
     type: 'about:blank',
     title: STATUS_CODES[status] ?? 'Error',
     status,
@@ -48,7 +65,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
 
     const problem = toProblemDetails(exception, request.url, request.id);
 
-    if (problem.status >= 500) {
+    if (problem.status >= 500 && !(exception instanceof ProblemException)) {
       this.logger.error({ err: exception }, 'Unhandled exception');
     }
 

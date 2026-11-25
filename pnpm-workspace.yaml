@@ -15,3 +15,10 @@ engineStrict: true
 saveExact: true
 # Only resolve package versions published at least 7 days ago (minutes).
 minimumReleaseAge: 10080
+# Dependency install scripts run only when allowed here. Denied entries are not needed:
+# ssh2 and cpu-features are optional native speedups (Testcontainers via SSH Docker hosts),
+# protobufjs only prints a version check.
+allowBuilds:
+  cpu-features: false
+  protobufjs: false
+  ssh2: false

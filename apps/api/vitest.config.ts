@@ -4,5 +4,7 @@ export default defineConfig({
   test: {
     include: ['src/**/*.spec.ts', 'test/**/*.spec.ts'],
     environment: 'node',
+    // Integration tests start containers; the first run also pulls images.
+    hookTimeout: 120_000,
   },
 });

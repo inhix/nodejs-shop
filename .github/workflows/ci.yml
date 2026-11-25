@@ -53,9 +53,13 @@ jobs:
         run: docker build --file apps/api/Dockerfile --tag shop-api:ci .
 
       # Starts the image and waits for its HEALTHCHECK, so a broken runtime fails CI.
+      # The URLs point nowhere: liveness must not depend on Postgres or Redis.
       - name: Smoke test API image
         run: |
-          docker run --detach --name api shop-api:ci
+          docker run --detach --name api \
+            --env DATABASE_URL=postgres://ci:ci@127.0.0.1:1/ci \
+            --env REDIS_URL=redis://127.0.0.1:1 \
+            shop-api:ci
           for _ in $(seq 1 30); do
             if [ "$(docker inspect --format '{{.State.Health.Status}}' api)" = healthy ]; then
               exit 0
