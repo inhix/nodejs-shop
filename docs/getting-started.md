@@ -101,21 +101,48 @@ The first run downloads the images. Data persists in a Docker volume between run
 pnpm dev
 ```
 
-This starts every app in watch mode:
+This starts every app in watch mode. Usually the links are:
 
 | App        | URL                     |
 | ---------- | ----------------------- |
 | API        | <http://127.0.0.1:3000> |
 | Storefront | <http://127.0.0.1:3001> |
 
+**If those links do not work, try <http://127.0.0.1:3100> (API) and <http://127.0.0.1:3101>
+(storefront), or check the console for the links.** `pnpm dev` picks free ports by itself: when
+3000 or 3001 is already taken (often by another copy of this app you forgot to stop), it moves
+both apps to 3100/3101, then 3200/3201, and so on. The console then shows which process holds
+the default ports, and once both apps answer it prints:
+
+```text
+[dev] Ready:
+  API         http://127.0.0.1:3100
+  Storefront  http://127.0.0.1:3101
+```
+
+To see the links again at any time, run this in another terminal in the same folder:
+
+```sh
+pnpm dev:urls
+# pnpm dev (PID 5682), started 2026-11-25T20:47:03.208Z:
+#   api         http://127.0.0.1:3100  (up)
+#   storefront  http://127.0.0.1:3101  (up)
+```
+
+Ports in `.env` (`PORT`, `API_URL`) apply only when you run a single app on its own, for example
+`pnpm --filter @shop/api dev`. Postgres and Redis always use the ports from `.env`.
+
 ## 6. Check that it works
+
+Use the API and storefront links from step 5 (the examples below assume the default ports):
 
 ```sh
 curl http://127.0.0.1:3000/health/ready
 # {"status":"ok","checks":{"postgres":"up","redis":"up"}}
 ```
 
-Open <http://127.0.0.1:3001>: the page shows «API працює» when the storefront can reach the API.
+Open the storefront link (<http://127.0.0.1:3001>): the page shows «API працює» when the
+storefront can reach the API.
 
 Then run the same checks as CI (needs Docker running; integration tests start their own
 containers with Testcontainers, separate from `infra:up`):
@@ -131,7 +158,8 @@ pnpm build
 
 ```sh
 pnpm infra:up       # after a reboot
-pnpm dev
+pnpm dev            # Ctrl+C stops all apps
+pnpm dev:urls       # links of the running pnpm dev (from another terminal)
 pnpm infra:down     # stop containers, keep data
 pnpm infra:reset    # stop containers and DELETE local data
 ```
@@ -146,6 +174,8 @@ After pulling changes, run `pnpm install` again; if `.nvmrc` changed, run `fnm i
 | `libatomic.so.1: cannot open shared object file` (Linux)   | `sudo apt-get install -y libatomic1`.                                                                                                                  |
 | `docker: command not found` (macOS)                        | Start Docker Desktop and put `~/.docker/bin` on your `PATH` (see step 1).                                                                              |
 | `pnpm infra:up` fails with "port is already allocated"     | Another Postgres or Redis is running. Stop it, or change `POSTGRES_PORT` / `REDIS_PORT` and the matching `DATABASE_URL` / `REDIS_URL` in `.env`.      |
-| `EADDRINUSE` on 3000 or 3001                               | Another dev server is running. Stop it, or for the API change `PORT` and `API_URL` in `.env`; run the storefront with `pnpm --filter @shop/storefront exec next dev --port <port>`. |
+| Links on 3000/3001 do not work, or show an old version     | `pnpm dev` moved to free ports: try 3100/3101, check the console, or run `pnpm dev:urls`. The `[dev] Port … is in use by …` line names the process on the default port; stop it if it is a forgotten copy. |
+| `[dev] No free ports between 3000 and 3901`                | Ten copies' worth of ports are busy. Stop old dev servers and run `pnpm dev` again.                                                                    |
+| `EADDRINUSE` when running a single app (`pnpm --filter …`) | Single apps use fixed ports. Stop the other server, or change `PORT` and `API_URL` in `.env` (API) or run `STOREFRONT_PORT=<port> pnpm --filter @shop/storefront dev`. |
 | API exits with a list of invalid variables                 | `.env` is missing or incomplete. Compare it with `.env.example`.                                                                                       |
 | `/health/ready` returns 503                                | Postgres is down: run `pnpm infra:up` and check `docker compose ps`.                                                                                   |
