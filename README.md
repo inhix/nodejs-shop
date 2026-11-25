@@ -18,7 +18,11 @@ cp .env.example .env
 pnpm infra:up      # Postgres and Redis on localhost, waits until healthy
 pnpm lint
 pnpm typecheck
+pnpm dev           # API on http://127.0.0.1:3000, reads the root .env
 ```
+
+Check the API with `curl http://127.0.0.1:3000/health/ready`: it reports Postgres and Redis
+separately and returns 503 when Postgres is unreachable.
 
 `pnpm infra:down` stops the containers and keeps data. `pnpm infra:reset` stops them and
 **deletes** the local database volume.
