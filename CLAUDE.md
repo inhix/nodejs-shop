@@ -179,7 +179,8 @@ Run from the repo root. Node version comes from `.nvmrc`; pnpm version from `pac
 
 ```
 pnpm install                      # install all workspaces (fails on the wrong Node version)
-pnpm dev                          # run all apps in dev mode
+pnpm dev                          # run all apps in dev mode on free ports (3000/3001, else 3100/3101, ...)
+pnpm dev:urls                     # print the links of the running pnpm dev
 pnpm build                        # build all packages and apps
 pnpm lint                         # ESLint in every package, then root-level files
 pnpm typecheck                    # tsc --noEmit in every package, then root-level files

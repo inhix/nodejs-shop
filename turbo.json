@@ -18,6 +18,7 @@
     },
     "dev": {
       "dependsOn": ["^build"],
+      "passThroughEnv": ["PORT", "API_URL", "STOREFRONT_PORT"],
       "cache": false,
       "persistent": true
     },

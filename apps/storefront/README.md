@@ -20,9 +20,10 @@ a `.env` file.
 Validated with Zod when the server starts (`src/instrumentation.ts`). On invalid values the
 process prints the variable names (never the values) and exits with code 1.
 
-| Variable  | Required | Notes                                                |
-| --------- | -------- | ---------------------------------------------------- |
-| `API_URL` | yes      | `http(s)://` URL of the API, used on the server only |
+| Variable          | Required | Notes                                                                            |
+| ----------------- | -------- | -------------------------------------------------------------------------------- |
+| `API_URL`         | yes      | `http(s)://` URL of the API, used on the server only                             |
+| `STOREFRONT_PORT` | no       | Dev server port, default `3001`. Root `pnpm dev` sets it (and `API_URL`) per run |
 
 ## Endpoints
 

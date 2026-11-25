@@ -22,8 +22,11 @@ cp .env.example .env
 pnpm infra:up      # Postgres and Redis on localhost, waits until healthy
 pnpm lint
 pnpm typecheck
-pnpm dev           # API on http://127.0.0.1:3000, reads the root .env
+pnpm dev           # API on :3000, storefront on :3001 (or the next free pair, see below)
 ```
+
+`pnpm dev` picks free ports: if 3000 or 3001 is taken it uses 3100/3101, then 3200/3201, and
+prints the links in the console. `pnpm dev:urls` shows them again.
 
 Check the API with `curl http://127.0.0.1:3000/health/ready`: it reports Postgres and Redis
 separately and returns 503 when Postgres is unreachable.
