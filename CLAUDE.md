@@ -145,6 +145,9 @@ it on a BullMQ queue.
 - Secrets never go in code, commits, or logs. Add new variables to `.env.example` with
   placeholder values.
 - Session cookies: httpOnly, Secure, SameSite. Passwords hashed with Argon2.
+- Security tooling (see `SECURITY.md`): CodeQL, Trivy image scan, dependency review, Renovate.
+  Do not disable a finding to pass CI; fix it, or add it to `.trivyignore` with a reason and
+  expiry date after asking.
 
 ## Workflow
 
@@ -194,7 +197,9 @@ docker build -f apps/api/Dockerfile -t shop-api .         # API image (from repo
 CI (`.github/workflows/`): `verify` runs format check, lint, typecheck, test, and build on every
 PR and push to `main`; `pr-title` runs commitlint on the PR title, because it becomes the squash
 commit message. `docker-build` builds the API image and
-waits for its health check. All three are required checks on `main`. Actions are pinned by commit SHA.
+waits for its health check, then scans the image with Trivy. All three are required checks on `main`;
+so are CodeQL (`codeql.yml`) and `dependency-review`. Actions are pinned by commit SHA. Renovate
+(`renovate.json`) opens dependency update PRs weekly.
 
 - Shared versions used by several packages live in the `catalog` in `pnpm-workspace.yaml`;
   reference them with `"catalog:"`.

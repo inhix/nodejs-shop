@@ -6,7 +6,7 @@ Closes #
 
 ## Type
 
-- [ ] feat - [ ] fix - [ ] chore - [ ] docs - [ ] refactor - [ ] test
+- [ ] feat - [ ] fix - [ ] chore - [ ] docs - [ ] refactor - [ ] test - [ ] ci
 
 ## How it was tested
 

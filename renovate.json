@@ -1,0 +1,47 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":pinAllExceptPeerDependencies",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "timezone": "Europe/Kyiv",
+  "schedule": ["before 6am on monday"],
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "prConcurrentLimit": 5,
+  "labels": ["dependencies"],
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "labels": ["dependencies", "security"]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  },
+  "packageRules": [
+    {
+      "description": "Node.js 26 everywhere at once: .nvmrc, engines, Docker base image, @types/node.",
+      "matchDepNames": ["node", "@types/node"],
+      "groupName": "Node.js",
+      "allowedVersions": "<27"
+    },
+    {
+      "description": "Postgres major must match RDS (ADR 0004); a major upgrade is a deliberate change.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["postgres"],
+      "allowedVersions": "<19"
+    },
+    {
+      "description": "Redis stays on 7.2: closest to ElastiCache, last BSD-licensed line (ADR 0006).",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["redis"],
+      "allowedVersions": "/^7\\.2\\./"
+    },
+    {
+      "description": "TypeScript 7 is not supported by typescript-eslint yet.",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7"
+    }
+  ]
+}
