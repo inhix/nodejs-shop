@@ -1,0 +1,159 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Shop API",
+    "version": "0.0.0"
+  },
+  "paths": {
+    "/health/live": {
+      "get": {
+        "operationId": "getLiveness",
+        "tags": [
+          "health"
+        ],
+        "summary": "Liveness probe",
+        "responses": {
+          "200": {
+            "description": "The process is up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Liveness"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "getReadiness",
+        "tags": [
+          "health"
+        ],
+        "summary": "Readiness probe for the load balancer",
+        "responses": {
+          "200": {
+            "description": "The instance can serve traffic (possibly degraded).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Readiness"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Postgres is unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Liveness": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false,
+        "description": "The process is up. Never depends on Postgres or Redis."
+      },
+      "Readiness": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded"
+            ]
+          },
+          "checks": {
+            "$ref": "#/components/schemas/ReadinessChecks"
+          }
+        },
+        "required": [
+          "status",
+          "checks"
+        ],
+        "additionalProperties": false,
+        "description": "`degraded`: Redis is down, but the instance can still serve traffic."
+      },
+      "ReadinessChecks": {
+        "type": "object",
+        "properties": {
+          "postgres": {
+            "$ref": "#/components/schemas/CheckStatus"
+          },
+          "redis": {
+            "$ref": "#/components/schemas/CheckStatus"
+          }
+        },
+        "required": [
+          "postgres",
+          "redis"
+        ],
+        "additionalProperties": false
+      },
+      "CheckStatus": {
+        "type": "string",
+        "enum": [
+          "up",
+          "down"
+        ]
+      },
+      "ReadinessProblem": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "number",
+            "const": 503
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "checks": {
+            "$ref": "#/components/schemas/ReadinessChecks"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "instance",
+          "checks"
+        ],
+        "additionalProperties": {},
+        "description": "Postgres is down; the instance cannot serve."
+      }
+    }
+  }
+}

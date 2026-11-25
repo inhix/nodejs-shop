@@ -17,8 +17,13 @@
       "outputs": ["coverage/**"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
+    },
+    "generate": {
+      "dependsOn": ["^generate"],
+      "cache": false
     }
   }
 }

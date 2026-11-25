@@ -1,0 +1,9 @@
+{
+  "extends": "@shop/config-ts/node.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "outDir": "dist",
+    "rootDir": "."
+  },
+  "include": ["src", "*.ts", "eslint.config.js"]
+}
