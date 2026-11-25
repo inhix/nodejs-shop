@@ -362,7 +362,7 @@ foundation is in place.
 
 ADRs are numbered in the order they are accepted; the index is `docs/adr/README.md`.
 Accepted so far: modular monolith, monorepo with pnpm and Turborepo, NestJS on Fastify,
-PostgreSQL, Drizzle over Prisma, Redis and node-redis, contracts pipeline.
+PostgreSQL, Drizzle over Prisma, Redis and node-redis, contracts pipeline, Next.js frontends.
 
 Planned topics (unordered): session-based auth · payment provider abstraction (mono + LiqPay,
 in-house clients) · fiscalization via Checkbox · Nova Poshta and shipping abstraction · order state machine · local AWS emulation ·

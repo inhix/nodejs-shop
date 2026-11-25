@@ -23,6 +23,8 @@ jobs:
     name: verify
     runs-on: ubuntu-26.04
     timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -43,57 +45,69 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
-  docker-build:
-    name: docker-build
+  # One image per app, built, smoke-tested and scanned in parallel.
+  docker-image:
+    name: docker-build (${{ matrix.app }})
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
       security-events: write # upload Trivy results to the Security tab
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Dependency URLs point nowhere: liveness must not depend on them.
+          - app: api
+            env: >-
+              --env DATABASE_URL=postgres://ci:ci@127.0.0.1:1/ci
+              --env REDIS_URL=redis://127.0.0.1:1
+          - app: storefront
+            env: --env API_URL=http://127.0.0.1:1
+    env:
+      APP: ${{ matrix.app }}
+      RUN_ENV: ${{ matrix.env }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Build API image
-        run: docker build --file apps/api/Dockerfile --tag shop-api:ci .
+      - name: Build image
+        run: docker build --file "apps/$APP/Dockerfile" --tag "shop-$APP:ci" .
 
       # Starts the image and waits for its HEALTHCHECK, so a broken runtime fails CI.
-      # The URLs point nowhere: liveness must not depend on Postgres or Redis.
-      - name: Smoke test API image
+      - name: Smoke test image
         run: |
-          docker run --detach --name api \
-            --env DATABASE_URL=postgres://ci:ci@127.0.0.1:1/ci \
-            --env REDIS_URL=redis://127.0.0.1:1 \
-            shop-api:ci
+          # shellcheck disable=SC2086 # RUN_ENV holds several --env flags on purpose.
+          docker run --detach --name app $RUN_ENV "shop-$APP:ci"
           for _ in $(seq 1 30); do
-            if [ "$(docker inspect --format '{{.State.Health.Status}}' api)" = healthy ]; then
+            if [ "$(docker inspect --format '{{.State.Health.Status}}' app)" = healthy ]; then
               exit 0
             fi
             sleep 1
           done
-          docker logs api
+          docker logs app
           exit 1
 
       # Trivy runs from its official image pinned by digest, not from trivy-action, whose
       # tags were hijacked in March 2026 (GHSA-69fq-xp46-6x23). The image is scanned as a
       # tarball, so the scanner needs no access to the Docker daemon.
-      - name: Export API image
-        run: docker save --output shop-api.tar shop-api:ci
+      - name: Export image
+        run: docker save --output image.tar "shop-$APP:ci"
 
       # Only fixable findings go to the Security tab, so every alert there is actionable.
-      # Unfixed ones (mostly Debian base packages) are listed in this step's log instead.
+      # Unfixed ones (mostly Debian base packages) are listed in the inventory log instead.
       - name: Trivy report (fixable, all severities, for the Security tab)
         uses: docker://aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
         with:
           args: >-
-            image --input shop-api.tar --cache-dir .trivy-cache --ignore-unfixed
+            image --input image.tar --cache-dir .trivy-cache --ignore-unfixed
             --format sarif --output trivy.sarif
 
       - name: Trivy inventory (unfixed included, log only)
         uses: docker://aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
         with:
-          args: image --input shop-api.tar --cache-dir .trivy-cache --skip-db-update --quiet
+          args: image --input image.tar --cache-dir .trivy-cache --skip-db-update --quiet
 
       - name: Upload Trivy report
         # Fork PRs get a read-only token and cannot upload.
@@ -101,7 +115,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           sarif_file: trivy.sarif
-          category: trivy
+          category: trivy/${{ matrix.app }}
 
       # Fails on HIGH/CRITICAL only when a fix exists: unfixable findings would block every
       # PR with nothing to do. Accepted risks go in .trivyignore with a reason and expiry.
@@ -109,6 +123,21 @@ jobs:
         uses: docker://aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
         with:
           args: >-
-            image --input shop-api.tar --cache-dir .trivy-cache --skip-db-update
+            image --input image.tar --cache-dir .trivy-cache --skip-db-update
             --ignorefile .trivyignore --ignore-unfixed --severity HIGH,CRITICAL
             --exit-code 1
+
+  # The required check on main. Its name stays stable when apps are added to the matrix.
+  docker-build:
+    name: docker-build
+    needs: docker-image
+    if: ${{ always() }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      - name: All images passed
+        env:
+          RESULT: ${{ needs.docker-image.result }}
+        run: |
+          echo "docker-image matrix result: $RESULT"
+          [ "$RESULT" = success ]
