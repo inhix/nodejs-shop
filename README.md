@@ -8,6 +8,10 @@ See [`docs/PROJECT_BRIEF.md`](docs/PROJECT_BRIEF.md) for scope, stack, and roadm
 
 ## Getting started
 
+New machine with nothing installed? Follow [`docs/getting-started.md`](docs/getting-started.md):
+it covers installing the tools on macOS, Linux, and Windows (WSL2), checking that everything
+works, and troubleshooting.
+
 Requirements: Node.js 26 (version in `.nvmrc`), pnpm (version pinned in `package.json`), and
 Docker with Docker Compose.
 
