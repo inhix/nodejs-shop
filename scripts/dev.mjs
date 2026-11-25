@@ -17,6 +17,7 @@ import {
   slotPorts,
   writeState,
 } from './dev-ports.mjs';
+import { checkDatabase, checkEnv, loadDevEnv } from './dev-checks.mjs';
 
 const READY_TIMEOUT_MS = 180_000;
 const READY_POLL_MS = 1_000;
@@ -56,7 +57,25 @@ async function announceWhenReady(ports, isStopped) {
   }
 }
 
+/**
+ * The API cannot work without a database it can log in to; say how to fix it before starting.
+ * @returns {Promise<string | null>} what to fix, or null when the setup is usable
+ */
+async function checkSetup() {
+  const { env, hasEnvFile } = loadDevEnv();
+  const envProblem = checkEnv(env, hasEnvFile);
+  if (envProblem !== null || env.DATABASE_URL === undefined) return envProblem;
+  return checkDatabase(env.DATABASE_URL);
+}
+
 async function main() {
+  const problem = await checkSetup();
+  if (problem) {
+    console.error(`[dev] Cannot start: ${problem}`);
+    process.exitCode = 1;
+    return;
+  }
+
   const picked = await pickSlot(isPortFree);
   if (!picked) {
     const last = slotPorts(MAX_SLOTS - 1);

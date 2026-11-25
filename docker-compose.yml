@@ -7,10 +7,12 @@ services:
     # Newest major generally available on RDS. Debian (glibc) image, not Alpine (musl),
     # so collation and text sorting match RDS.
     image: postgres:18.7-trixie
+    # No defaults on purpose: Postgres keeps the password it was first created with, so a
+    # fallback here would silently create a database the API (DATABASE_URL in .env) cannot use.
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-shop}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shop}
-      POSTGRES_DB: ${POSTGRES_DB:-shop}
+      POSTGRES_USER: ${POSTGRES_USER:?Copy .env.example to .env first (see docs/getting-started.md)}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env first (see docs/getting-started.md)}
+      POSTGRES_DB: ${POSTGRES_DB:?Copy .env.example to .env first (see docs/getting-started.md)}
     ports:
       - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
     volumes:
