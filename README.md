@@ -27,7 +27,7 @@ pnpm typecheck
 
 ```
 apps/        api, storefront, admin (added in Phase 0 steps 4–5)
-packages/    config-ts, config-eslint (shared tooling); contracts, api-client, ui to follow
+packages/    contracts (Zod + OpenAPI), api-client (generated), config-ts, config-eslint; ui to follow
 docs/        project brief, ADRs, vendor API docs, runbooks
 ```
 

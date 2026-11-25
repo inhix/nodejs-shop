@@ -1,4 +1,5 @@
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
+import { readinessSchema } from '@shop/contracts';
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { RedisContainer } from '@testcontainers/redis';
@@ -54,6 +55,7 @@ describe('GET /health/ready (real Postgres and Redis)', () => {
         status: 'ok',
         checks: { postgres: 'up', redis: 'up' },
       });
+    expect(readinessSchema.safeParse((await readiness(app)).body).success).toBe(true);
   });
 
   it('boots and reports degraded when Redis is unreachable from the start', async () => {

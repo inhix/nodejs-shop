@@ -10,6 +10,7 @@
     "prepare": "husky",
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "generate": "turbo run generate",
     "lint": "turbo run lint && eslint --max-warnings=0 .",
     "typecheck": "turbo run typecheck && tsc --noEmit",
     "test": "turbo run test",

@@ -4,17 +4,7 @@ import { Catch, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
-/** RFC 9457 Problem Details, plus the request ID so clients can quote it to support. */
-export interface ProblemDetails {
-  type: string;
-  title: string;
-  status: number;
-  detail?: string;
-  instance: string;
-  requestId?: string;
-  /** RFC 9457 extension members, e.g. `checks` on a failed readiness probe. */
-  [extension: string]: unknown;
-}
+import type { ProblemDetails } from '@shop/contracts';
 
 /**
  * A deliberate error response with extra Problem Details members. It is part of normal

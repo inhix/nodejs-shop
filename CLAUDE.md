@@ -93,6 +93,8 @@ it on a BullMQ queue.
 - TypeScript strict. No `any`, no `@ts-ignore`. Non-null assertions need a comment explaining why.
 - Validate every external input with Zod at the boundary (HTTP, webhooks, queue jobs, env).
 - Reuse schemas from `packages/contracts`; do not redefine request/response shapes locally.
+- Every API route is in the OpenAPI document in `packages/contracts/src/openapi.ts`. After a
+  contract change run `pnpm generate` and commit the generated files; tests fail otherwise.
 - Config is validated with Zod at startup; the app must refuse to boot on invalid config.
 - API errors use RFC 9457 Problem Details via the global exception filter.
 - Logging: Pino, structured, with request ID. Never log secrets, tokens, card data, or full PII.
@@ -178,6 +180,7 @@ pnpm lint                         # ESLint in every package, then root-level fil
 pnpm typecheck                    # tsc --noEmit in every package, then root-level files
 pnpm test                         # tests in every package
 pnpm format / pnpm format:check   # Prettier write / check (docs/ is excluded)
+pnpm generate                     # rebuild openapi.json and the api-client types after a contract change
 pnpm --filter <package> <script>  # run a script in one package, e.g. --filter @shop/config-eslint lint
 pnpm infra:up                     # start Postgres and Redis, wait until healthy
 pnpm infra:down                   # stop them (data kept)

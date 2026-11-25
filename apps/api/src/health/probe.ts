@@ -1,13 +1,9 @@
 import { setTimeout } from 'node:timers/promises';
 
-export type CheckStatus = 'up' | 'down';
+import type { CheckStatus, Readiness, ReadinessChecks } from '@shop/contracts';
 
-export interface ReadinessChecks {
-  postgres: CheckStatus;
-  redis: CheckStatus;
-}
-
-export type ReadinessStatus = 'ok' | 'degraded' | 'unavailable';
+/** The contract's statuses, plus `unavailable`, which the API answers with a 503 problem. */
+export type ReadinessStatus = Readiness['status'] | 'unavailable';
 
 /** Runs `check` with a time limit. Any error or timeout counts as down. */
 export async function probe(

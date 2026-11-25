@@ -15,6 +15,7 @@
     "@nestjs/common": "12.5.1",
     "@nestjs/core": "12.5.1",
     "@nestjs/platform-fastify": "12.5.1",
+    "@shop/contracts": "workspace:*",
     "fastify": "5.12.8",
     "nestjs-pino": "5.3.2",
     "pg": "8.23.1",
@@ -38,6 +39,6 @@
     "pino-pretty": "13.2.0",
     "testcontainers": "12.2.1",
     "typescript": "catalog:",
-    "vitest": "5.1.0"
+    "vitest": "catalog:"
   }
 }

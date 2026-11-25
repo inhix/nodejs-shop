@@ -6,3 +6,7 @@ coverage
 
 # Long-form docs: Prettier pads every Markdown table, so a one-row edit rewrites the whole table.
 docs
+
+# Generated files: kept byte-for-byte as their generators write them (tests compare them).
+packages/contracts/openapi.json
+packages/api-client/src/generated
