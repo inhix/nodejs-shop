@@ -116,7 +116,7 @@ This starts every app in watch mode. Usually the links are:
 
 **If those links do not work, try <http://127.0.0.1:3100> (API), <http://127.0.0.1:3101>
 (storefront) and <http://127.0.0.1:3102> (admin), or check the console for the links.** `pnpm dev` picks free ports by itself: when
-3000, 3001 or 3002 is already taken (often by another copy of this app you forgot to stop), it
+3000, 3001 or 3002 is already taken by another checkout of this repository or another program, it
 moves all apps to 3100-3102, then 3200-3202, and so on. The console then shows which process
 holds the default ports, and once the apps answer it prints:
 
@@ -183,7 +183,8 @@ After pulling changes, run `pnpm install` again; if `.nvmrc` changed, run `fnm i
 | `libatomic.so.1: cannot open shared object file` (Linux)   | `sudo apt-get install -y libatomic1`.                                                                                                                  |
 | `docker: command not found` (macOS)                        | Start Docker Desktop and put `~/.docker/bin` on your `PATH` (see step 1).                                                                              |
 | `pnpm infra:up` fails with "port is already allocated"     | Another Postgres or Redis is running. Stop it, or change `POSTGRES_PORT` / `REDIS_PORT` and the matching `DATABASE_URL` / `REDIS_URL` in `.env`.      |
-| Links on 3000-3002 do not work, or show an old version     | `pnpm dev` moved to free ports: try 3100-3102, check the console, or run `pnpm dev:urls`. The `[dev] Port … is in use by …` line names the process on the default port; stop it if it is a forgotten copy. |
+| Links on 3000-3002 do not work, or show an old version     | `pnpm dev` moved to free ports: try 3100-3102, check the console, or run `pnpm dev:urls`. The `[dev] Port … is in use by …` line names the process on the default port (another checkout or program); stop it if you no longer need it. |
+| `[dev] Already running in this checkout`                    | This checkout already runs `pnpm dev` (or a frontend's `next dev`). Use the links it prints, or stop that run (Ctrl+C in its terminal, or the `kill` command shown) and start again. Next.js allows only one dev server per app folder. |
 | `[dev] No free ports between 3000 and 3902`                | Ten copies' worth of ports are busy. Stop old dev servers and run `pnpm dev` again.                                                                    |
 | `EADDRINUSE` when running a single app (`pnpm --filter …`) | Single apps use fixed ports. Stop the other server, or change `PORT` and `API_URL` in `.env` (API) or run `STOREFRONT_PORT=<port> pnpm --filter @shop/storefront dev` (`ADMIN_PORT` for the admin). |
 | API exits with a list of invalid variables                 | `.env` is missing or incomplete. Compare it with `.env.example`.                                                                                       |

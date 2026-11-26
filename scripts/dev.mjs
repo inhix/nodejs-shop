@@ -7,12 +7,15 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 import {
   appUrls,
+  describeRunningDev,
+  findNextDevServers,
   findPortOwner,
   formatLinks,
   isAppUp,
   isPortFree,
   MAX_SLOTS,
   pickSlot,
+  readState,
   removeState,
   slotPorts,
   writeState,
@@ -22,14 +25,14 @@ import { checkDatabase, checkEnv, loadDevEnv } from './dev-checks.mjs';
 const READY_TIMEOUT_MS = 180_000;
 const READY_POLL_MS = 1_000;
 
-/** Explains why the default ports were skipped; a busy port is often a forgotten copy of the app. */
+/** Explains why the default ports were skipped. This checkout's own runs are caught earlier. */
 async function reportBusyDefaults() {
   for (const [app, port] of Object.entries(slotPorts(0))) {
     if (await isPortFree(port)) continue;
     const owner = await findPortOwner(port);
     const by = owner ? ` by ${owner.command} (PID ${String(owner.pid)})` : '';
     console.warn(
-      `[dev] Port ${String(port)} (${app}) is in use${by}. Is another copy of this app running?`,
+      `[dev] Port ${String(port)} (${app}) is in use${by}: another checkout or program.`,
     );
   }
 }
@@ -69,6 +72,14 @@ async function checkSetup() {
 }
 
 async function main() {
+  // Before anything else: a second run in this checkout would only fail in Next.js.
+  const running = describeRunningDev(await readState(), await findNextDevServers());
+  if (running) {
+    console.error(running);
+    process.exitCode = 1;
+    return;
+  }
+
   const problem = await checkSetup();
   if (problem) {
     console.error(`[dev] Cannot start: ${problem}`);
@@ -90,7 +101,14 @@ async function main() {
   if (slot > 0) await reportBusyDefaults();
   console.log(`[dev] Starting with:\n${formatLinks(ports)}\n`);
 
-  await writeState({ pid: process.pid, ...ports, startedAt: new Date().toISOString() });
+  try {
+    await writeState({ pid: process.pid, ...ports, startedAt: new Date().toISOString() });
+  } catch (error) {
+    // Another `pnpm dev` started in this checkout between the check above and now.
+    console.error(`[dev] Cannot start: ${/** @type {Error} */ (error).message}.`);
+    process.exitCode = 1;
+    return;
+  }
 
   const turbo = join(import.meta.dirname, '..', 'node_modules', '.bin', 'turbo');
   const child = spawn(turbo, ['run', 'dev', ...process.argv.slice(2)], {
@@ -135,14 +153,14 @@ async function main() {
   child.once('exit', (code, signal) => {
     stopped = true;
     exited = true;
-    void removeState().finally(() => {
+    void removeState(process.pid).finally(() => {
       process.exitCode = code ?? (signal ? 1 : 0);
     });
   });
   child.once('error', (error) => {
     stopped = true;
     console.error(`[dev] Could not start turbo: ${error.message}`);
-    void removeState().finally(() => {
+    void removeState(process.pid).finally(() => {
       process.exitCode = 1;
     });
   });

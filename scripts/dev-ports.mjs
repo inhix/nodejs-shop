@@ -25,6 +25,7 @@ export const STATE_FILE = join(
  * @typedef {{ api: number, storefront: number, admin: number }} SlotPorts
  * @typedef {{ pid: number, api: number, storefront: number, admin: number, startedAt: string }} DevState
  * @typedef {{ pid: number, command: string }} PortOwner
+ * @typedef {{ app: string, pid: number, url: string }} NextDevServer
  */
 
 /**
@@ -130,20 +131,29 @@ export function findPortOwner(port) {
 }
 
 /**
+ * Records the running `pnpm dev`. Refuses to replace the record of another live run.
  * @param {DevState} state
+ * @param {string} [file]
  * @returns {Promise<void>}
  */
-export async function writeState(state) {
-  await mkdir(dirname(STATE_FILE), { recursive: true });
-  await writeFile(STATE_FILE, `${JSON.stringify(state, null, 2)}\n`);
+export async function writeState(state, file = STATE_FILE) {
+  const current = await readState(file);
+  if (current && current.pid !== state.pid) {
+    throw new Error(`pnpm dev (PID ${String(current.pid)}) is already running in this checkout`);
+  }
+  await mkdir(dirname(file), { recursive: true });
+  await writeFile(file, `${JSON.stringify(state, null, 2)}\n`);
 }
 
-/** @returns {Promise<DevState | null>} the state of the running `pnpm dev`, or null */
-export async function readState() {
+/**
+ * @param {string} [file]
+ * @returns {Promise<DevState | null>} the state of the running `pnpm dev`, or null
+ */
+export async function readState(file = STATE_FILE) {
   /** @type {unknown} */
   let data;
   try {
-    data = JSON.parse(await readFile(STATE_FILE, 'utf8'));
+    data = JSON.parse(await readFile(file, 'utf8'));
   } catch {
     // Missing or unreadable (e.g. a crash mid-write): treat as not running.
     return null;
@@ -153,8 +163,88 @@ export async function readState() {
 }
 
 /** @returns {Promise<void>} */
-export async function removeState() {
-  await rm(STATE_FILE, { force: true });
+/**
+ * Deletes the record, but only if it belongs to `pid`: never the record of another run.
+ * @param {number} pid
+ * @param {string} [file]
+ * @returns {Promise<void>}
+ */
+export async function removeState(pid, file = STATE_FILE) {
+  /** @type {unknown} */
+  let data;
+  try {
+    data = JSON.parse(await readFile(file, 'utf8'));
+  } catch {
+    return;
+  }
+  if (isDevState(data) && data.pid === pid) await rm(file, { force: true });
+}
+
+/** Next.js apps started by `pnpm dev`, with their labels in the links. */
+export const NEXT_APPS = Object.freeze({ storefront: 'Storefront', admin: 'Admin' });
+
+/**
+ * Next.js 16 allows one `next dev` per app folder, on any port, and records it in
+ * `.next/dev/lock` as JSON (`pid`, `appUrl`, ...). That format is internal to Next.js, so this
+ * is best effort: a missing, unreadable or stale lock (Next leaves it behind on exit) is null.
+ * @param {string} lockFile
+ * @returns {Promise<{ pid: number, url: string } | null>}
+ */
+export async function readNextDevLock(lockFile) {
+  /** @type {unknown} */
+  let data;
+  try {
+    data = JSON.parse(await readFile(lockFile, 'utf8'));
+  } catch {
+    return null;
+  }
+  if (typeof data !== 'object' || data === null) return null;
+  const record = /** @type {Record<string, unknown>} */ (data);
+  const { pid, appUrl } = record;
+  if (typeof pid !== 'number' || !Number.isInteger(pid) || typeof appUrl !== 'string') return null;
+  return isProcessAlive(pid) ? { pid, url: appUrl } : null;
+}
+
+/**
+ * @param {string} [appsDir] the repo's apps/ folder
+ * @returns {Promise<NextDevServer[]>} the live `next dev` servers of this checkout
+ */
+export async function findNextDevServers(appsDir = join(import.meta.dirname, '..', 'apps')) {
+  const found = await Promise.all(
+    Object.keys(NEXT_APPS).map(async (app) => {
+      const lock = await readNextDevLock(join(appsDir, app, '.next', 'dev', 'lock'));
+      return lock ? { app, ...lock } : null;
+    }),
+  );
+  return found.filter((server) => server !== null);
+}
+
+/**
+ * A second `pnpm dev` in the same checkout cannot work: Next.js refuses a second `next dev`
+ * per app folder. Describes the run that is already going, or returns null when there is none.
+ * @param {DevState | null} state the live `pnpm dev` of this checkout
+ * @param {NextDevServer[]} nextServers live `next dev` servers of this checkout
+ * @returns {string | null}
+ */
+export function describeRunningDev(state, nextServers) {
+  if (state) {
+    return [
+      `[dev] Already running in this checkout (pnpm dev, PID ${String(state.pid)}):`,
+      formatLinks(state),
+      `Stop it with Ctrl+C in its terminal, or: kill ${String(state.pid)}`,
+    ].join('\n');
+  }
+  if (nextServers.length === 0) return null;
+  const rows = nextServers.map((server) => {
+    const label = NEXT_APPS[/** @type {keyof typeof NEXT_APPS} */ (server.app)];
+    return `  ${label.padEnd(11)} ${server.url}  (next dev, PID ${String(server.pid)})`;
+  });
+  const pids = nextServers.map((server) => String(server.pid)).join(' ');
+  return [
+    '[dev] Already running in this checkout:',
+    ...rows,
+    `Stop ${nextServers.length === 1 ? 'it' : 'them'} with Ctrl+C in its terminal, or: kill ${pids}`,
+  ].join('\n');
 }
 
 /**

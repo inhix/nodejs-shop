@@ -25,8 +25,11 @@ pnpm typecheck
 pnpm dev           # API :3000, storefront :3001, admin :3002 (or the next free slot, see below)
 ```
 
-`pnpm dev` picks free ports: if any of 3000-3002 is taken it uses 3100-3102, then 3200-3202, and
-prints the links in the console. `pnpm dev:urls` shows them again.
+`pnpm dev` picks free ports: if any of 3000-3002 is taken by another checkout or program, it uses
+3100-3102, then 3200-3202, and prints the links in the console. `pnpm dev:urls` shows them again.
+If this checkout already runs `pnpm dev` (or a frontend's `next dev`), a second `pnpm dev` starts
+nothing: it prints the running links and how to stop that run, because Next.js allows only one
+dev server per app folder.
 
 Check the API with `curl http://127.0.0.1:3000/health/ready`: it reports Postgres and Redis
 separately and returns 503 when Postgres is unreachable.
