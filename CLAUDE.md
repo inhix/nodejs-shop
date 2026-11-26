@@ -199,13 +199,15 @@ pnpm --filter @shop/api exec vitest run test/health.int.spec.ts   # integration 
 docker build -f apps/api/Dockerfile -t shop-api .         # API image (from repo root)
 docker build -f apps/storefront/Dockerfile -t shop-storefront .   # storefront image
 docker build -f apps/admin/Dockerfile -t shop-admin .             # admin image
+docker run --rm -v "$PWD:/repo" -w /repo hashicorp/terraform:1.17.2 -chdir=infra/bootstrap test   # Terraform tests, no AWS needed
 ```
 
 CI (`.github/workflows/`): `verify` runs format check, lint, typecheck, test, and build on every
 PR and push to `main`; `pr-title` runs commitlint on the PR title, because it becomes the squash
 commit message. `docker-build` builds every app image in a matrix,
 waits for each health check, then scans each image with Trivy. All three are required checks on `main`;
-so are CodeQL (`codeql.yml`) and `dependency-review`. Actions are pinned by commit SHA. Renovate
+so are CodeQL (`codeql.yml`) and `dependency-review`. `terraform` (`terraform.yml`) runs fmt, validate,
+mock-provider tests, tflint and Trivy's misconfiguration scan on `infra/` without AWS credentials. Actions are pinned by commit SHA. Renovate
 (`renovate.json`) opens dependency update PRs weekly.
 
 - Shared versions used by several packages live in the `catalog` in `pnpm-workspace.yaml`;

@@ -362,11 +362,12 @@ foundation is in place.
 
 ADRs are numbered in the order they are accepted; the index is `docs/adr/README.md`.
 Accepted so far: modular monolith, monorepo with pnpm and Turborepo, NestJS on Fastify,
-PostgreSQL, Drizzle over Prisma, Redis and node-redis, contracts pipeline, Next.js frontends.
+PostgreSQL, Drizzle over Prisma, Redis and node-redis, contracts pipeline, Next.js frontends,
+Terraform, AWS access model.
 
 Planned topics (unordered): session-based auth · payment provider abstraction (mono + LiqPay,
 in-house clients) · fiscalization via Checkbox · Nova Poshta and shipping abstraction · order state machine · local AWS emulation ·
-AWS with ECS Fargate · Terraform · no Kubernetes in production · NAT and networking strategy
+AWS with ECS Fargate · no Kubernetes in production · NAT and networking strategy
 
 ## 12. Open questions
 

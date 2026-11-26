@@ -5,3 +5,10 @@
 # Example:
 # # Only reachable through feature X, which we do not use. Accepted 2026-11-25.
 # CVE-2026-12345 exp:2027-02-25
+
+# Terraform state bucket uses SSE-S3 (AWS-managed keys), not a customer-managed KMS key.
+# The bucket is private, HTTPS-only and versioned, and no secrets are stored in state; a KMS key
+# would add access control per key and a decryption audit trail for about $1/month. Accepted by
+# the repository owner on 2026-11-26 to keep Phase 0 at no cost; revisit before production state
+# exists (Phase 8). See infra/bootstrap/state.tf.
+AWS-0132 exp:2027-05-26
