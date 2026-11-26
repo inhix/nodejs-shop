@@ -64,6 +64,8 @@ jobs:
               --env REDIS_URL=redis://127.0.0.1:1
           - app: storefront
             env: --env API_URL=http://127.0.0.1:1
+          - app: admin
+            env: --env API_URL=http://127.0.0.1:1
     env:
       APP: ${{ matrix.app }}
       RUN_ENV: ${{ matrix.env }}

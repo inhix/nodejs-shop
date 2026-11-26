@@ -179,7 +179,7 @@ Run from the repo root. Node version comes from `.nvmrc`; pnpm version from `pac
 
 ```
 pnpm install                      # install all workspaces (fails on the wrong Node version)
-pnpm dev                          # run all apps in dev mode on free ports (3000/3001, else 3100/3101, ...)
+pnpm dev                          # run all apps in dev mode on free ports (3000-3002, else 3100-3102, ...)
 pnpm dev:urls                     # print the links of the running pnpm dev
 pnpm build                        # build all packages and apps
 pnpm lint                         # ESLint in every package, then root-level files
@@ -193,10 +193,12 @@ pnpm infra:down                   # stop them (data kept)
 pnpm infra:reset                  # stop them and DELETE local data volumes
 pnpm --filter @shop/api dev       # API with reload on http://127.0.0.1:3000
 pnpm --filter @shop/storefront dev   # storefront on http://127.0.0.1:3001
+pnpm --filter @shop/admin dev        # admin on http://127.0.0.1:3002
 pnpm --filter @shop/api exec vitest run test/app.spec.ts   # a single test file
 pnpm --filter @shop/api exec vitest run test/health.int.spec.ts   # integration (needs Docker)
 docker build -f apps/api/Dockerfile -t shop-api .         # API image (from repo root)
 docker build -f apps/storefront/Dockerfile -t shop-storefront .   # storefront image
+docker build -f apps/admin/Dockerfile -t shop-admin .             # admin image
 ```
 
 CI (`.github/workflows/`): `verify` runs format check, lint, typecheck, test, and build on every

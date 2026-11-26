@@ -4,8 +4,8 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import { dirname, join } from 'node:path';
 
-/** Apps started by `pnpm dev` and their offset inside a slot. Admin will take offset 2. */
-export const APP_OFFSETS = Object.freeze({ api: 0, storefront: 1 });
+/** Apps started by `pnpm dev` and their offset inside a slot. */
+export const APP_OFFSETS = Object.freeze({ api: 0, storefront: 1, admin: 2 });
 
 export const BASE_PORT = 3000;
 export const SLOT_STEP = 100;
@@ -22,8 +22,8 @@ export const STATE_FILE = join(
 );
 
 /**
- * @typedef {{ api: number, storefront: number }} SlotPorts
- * @typedef {{ pid: number, api: number, storefront: number, startedAt: string }} DevState
+ * @typedef {{ api: number, storefront: number, admin: number }} SlotPorts
+ * @typedef {{ pid: number, api: number, storefront: number, admin: number, startedAt: string }} DevState
  * @typedef {{ pid: number, command: string }} PortOwner
  */
 
@@ -33,7 +33,11 @@ export const STATE_FILE = join(
  */
 export function slotPorts(slot) {
   const base = BASE_PORT + slot * SLOT_STEP;
-  return { api: base + APP_OFFSETS.api, storefront: base + APP_OFFSETS.storefront };
+  return {
+    api: base + APP_OFFSETS.api,
+    storefront: base + APP_OFFSETS.storefront,
+    admin: base + APP_OFFSETS.admin,
+  };
 }
 
 /**
@@ -164,6 +168,7 @@ function isDevState(data) {
     Number.isInteger(record.pid) &&
     Number.isInteger(record.api) &&
     Number.isInteger(record.storefront) &&
+    Number.isInteger(record.admin) &&
     typeof record.startedAt === 'string'
   );
 }
@@ -184,12 +189,13 @@ function isProcessAlive(pid) {
 
 /**
  * @param {SlotPorts} ports
- * @returns {{ api: string, storefront: string }}
+ * @returns {{ api: string, storefront: string, admin: string }}
  */
 export function appUrls(ports) {
   return {
     api: `http://127.0.0.1:${String(ports.api)}`,
     storefront: `http://127.0.0.1:${String(ports.storefront)}`,
+    admin: `http://127.0.0.1:${String(ports.admin)}`,
   };
 }
 
@@ -212,5 +218,9 @@ export async function isAppUp(baseUrl) {
  */
 export function formatLinks(ports) {
   const urls = appUrls(ports);
-  return [`  API         ${urls.api}`, `  Storefront  ${urls.storefront}`].join('\n');
+  return [
+    `  API         ${urls.api}`,
+    `  Storefront  ${urls.storefront}`,
+    `  Admin       ${urls.admin}`,
+  ].join('\n');
 }

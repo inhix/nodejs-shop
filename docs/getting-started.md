@@ -1,6 +1,6 @@
 # Getting started from zero
 
-This guide takes a machine with nothing installed to a running API and storefront. It was
+This guide takes a machine with nothing installed to a running API, storefront and admin. It was
 tested end to end on macOS (Apple silicon) and on a clean Debian 13 container (Linux steps,
 without Docker-based parts). Claude Code is not required; if you use it, ask it to follow
 this file.
@@ -84,7 +84,7 @@ pnpm install                           # also installs the git hooks (husky)
 cp .env.example .env                   # local-only values; never commit .env
 ```
 
-The API, the storefront dev servers, and Docker Compose all read this root `.env`. The defaults
+The API, the storefront and admin dev servers, and Docker Compose all read this root `.env`. The defaults
 work as they are. Create `.env` **before** step 4: `pnpm infra:up` refuses to start without it.
 
 ## 4. Start the infrastructure
@@ -112,17 +112,19 @@ This starts every app in watch mode. Usually the links are:
 | ---------- | ----------------------- |
 | API        | <http://127.0.0.1:3000> |
 | Storefront | <http://127.0.0.1:3001> |
+| Admin      | <http://127.0.0.1:3002> |
 
-**If those links do not work, try <http://127.0.0.1:3100> (API) and <http://127.0.0.1:3101>
-(storefront), or check the console for the links.** `pnpm dev` picks free ports by itself: when
-3000 or 3001 is already taken (often by another copy of this app you forgot to stop), it moves
-both apps to 3100/3101, then 3200/3201, and so on. The console then shows which process holds
-the default ports, and once both apps answer it prints:
+**If those links do not work, try <http://127.0.0.1:3100> (API), <http://127.0.0.1:3101>
+(storefront) and <http://127.0.0.1:3102> (admin), or check the console for the links.** `pnpm dev` picks free ports by itself: when
+3000, 3001 or 3002 is already taken (often by another copy of this app you forgot to stop), it
+moves all apps to 3100-3102, then 3200-3202, and so on. The console then shows which process
+holds the default ports, and once the apps answer it prints:
 
 ```text
 [dev] Ready:
   API         http://127.0.0.1:3100
   Storefront  http://127.0.0.1:3101
+  Admin       http://127.0.0.1:3102
 ```
 
 To see the links again at any time, run this in another terminal in the same folder:
@@ -132,6 +134,7 @@ pnpm dev:urls
 # pnpm dev (PID 5682), started 2026-11-25T20:47:03.208Z:
 #   api         http://127.0.0.1:3100  (up)
 #   storefront  http://127.0.0.1:3101  (up)
+#   admin       http://127.0.0.1:3102  (up)
 ```
 
 Ports in `.env` (`PORT`, `API_URL`) apply only when you run a single app on its own, for example
@@ -147,7 +150,8 @@ curl http://127.0.0.1:3000/health/ready
 ```
 
 Open the storefront link (<http://127.0.0.1:3001>): the page shows «API працює» when the
-storefront can reach the API.
+storefront can reach the API. The admin (<http://127.0.0.1:3002>) shows the same status. It has
+no login yet (Phase 2), so never expose it outside your machine.
 
 Then run the same checks as CI (needs Docker running; integration tests start their own
 containers with Testcontainers, separate from `infra:up`):
@@ -179,13 +183,13 @@ After pulling changes, run `pnpm install` again; if `.nvmrc` changed, run `fnm i
 | `libatomic.so.1: cannot open shared object file` (Linux)   | `sudo apt-get install -y libatomic1`.                                                                                                                  |
 | `docker: command not found` (macOS)                        | Start Docker Desktop and put `~/.docker/bin` on your `PATH` (see step 1).                                                                              |
 | `pnpm infra:up` fails with "port is already allocated"     | Another Postgres or Redis is running. Stop it, or change `POSTGRES_PORT` / `REDIS_PORT` and the matching `DATABASE_URL` / `REDIS_URL` in `.env`.      |
-| Links on 3000/3001 do not work, or show an old version     | `pnpm dev` moved to free ports: try 3100/3101, check the console, or run `pnpm dev:urls`. The `[dev] Port … is in use by …` line names the process on the default port; stop it if it is a forgotten copy. |
-| `[dev] No free ports between 3000 and 3901`                | Ten copies' worth of ports are busy. Stop old dev servers and run `pnpm dev` again.                                                                    |
-| `EADDRINUSE` when running a single app (`pnpm --filter …`) | Single apps use fixed ports. Stop the other server, or change `PORT` and `API_URL` in `.env` (API) or run `STOREFRONT_PORT=<port> pnpm --filter @shop/storefront dev`. |
+| Links on 3000-3002 do not work, or show an old version     | `pnpm dev` moved to free ports: try 3100-3102, check the console, or run `pnpm dev:urls`. The `[dev] Port … is in use by …` line names the process on the default port; stop it if it is a forgotten copy. |
+| `[dev] No free ports between 3000 and 3902`                | Ten copies' worth of ports are busy. Stop old dev servers and run `pnpm dev` again.                                                                    |
+| `EADDRINUSE` when running a single app (`pnpm --filter …`) | Single apps use fixed ports. Stop the other server, or change `PORT` and `API_URL` in `.env` (API) or run `STOREFRONT_PORT=<port> pnpm --filter @shop/storefront dev` (`ADMIN_PORT` for the admin). |
 | API exits with a list of invalid variables                 | `.env` is missing or incomplete. Compare it with `.env.example`.                                                                                       |
 | `/health/ready` returns 503                                | Postgres is down: run `pnpm infra:up` and check `docker compose ps`.                                                                                   |
 | `pnpm infra:up`: `required variable POSTGRES_PASSWORD is missing a value` | There is no `.env`: `cp .env.example .env`, then run it again.                                                                          |
 | `[dev] Cannot start: There is no .env file` / `DATABASE_URL is missing` | Create `.env` from `.env.example`, or add the lines your `.env` is missing.                                                              |
 | `[dev] Cannot start: Postgres is not reachable`            | Run `pnpm infra:up`. If it fails with "port is already allocated", see the row above.                                                                  |
 | `[dev] Cannot start: Postgres rejected DATABASE_URL` (`password authentication failed`) | The database was created with other credentials than `DATABASE_URL` now has (for example, `pnpm infra:up` ran before `.env` existed). Set `DATABASE_URL` to the values it was created with, or, if local data can go, `pnpm infra:reset && pnpm infra:up`. |
-| Storefront shows «API недоступний»                          | Run `pnpm dev` again and read the `[dev]` lines; check `curl <API link>/health/ready`, which says whether Postgres or Redis is down.                    |
+| Storefront or admin shows «API недоступний»                          | Run `pnpm dev` again and read the `[dev]` lines; check `curl <API link>/health/ready`, which says whether Postgres or Redis is down.                    |
