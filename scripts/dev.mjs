@@ -1,6 +1,6 @@
 // `pnpm dev`: picks free ports for the apps, then runs `turbo run dev` with them.
-// Slots are tried in order: 3000/3001, 3100/3101, 3200/3201, ... The API and storefront always
-// share a slot, and the storefront gets the matching API_URL. Extra arguments go to turbo.
+// Slots are tried in order: 3000-3002, 3100-3102, 3200-3202, ... The API, storefront and admin
+// always share a slot, and both frontends get the matching API_URL. Extra arguments go to turbo.
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -80,7 +80,7 @@ async function main() {
   if (!picked) {
     const last = slotPorts(MAX_SLOTS - 1);
     console.error(
-      `[dev] No free ports between ${String(slotPorts(0).api)} and ${String(last.storefront)}. ` +
+      `[dev] No free ports between ${String(slotPorts(0).api)} and ${String(last.admin)}. ` +
         'Stop other dev servers (`pnpm dev:urls` shows this checkout’s) and try again.',
     );
     process.exitCode = 1;
@@ -105,6 +105,7 @@ async function main() {
       PORT: String(ports.api),
       API_URL: appUrls(ports).api,
       STOREFRONT_PORT: String(ports.storefront),
+      ADMIN_PORT: String(ports.admin),
     },
   });
 

@@ -41,10 +41,10 @@ function freeExcept(busyPorts) {
   return (port) => Promise.resolve(!busy.has(port));
 }
 
-await test('slotPorts starts at 3000/3001 and steps by 100', () => {
-  assert.deepEqual(slotPorts(0), { api: 3000, storefront: 3001 });
-  assert.deepEqual(slotPorts(1), { api: 3100, storefront: 3101 });
-  assert.deepEqual(slotPorts(4), { api: 3400, storefront: 3401 });
+await test('slotPorts starts at 3000-3002 and steps by 100', () => {
+  assert.deepEqual(slotPorts(0), { api: 3000, storefront: 3001, admin: 3002 });
+  assert.deepEqual(slotPorts(1), { api: 3100, storefront: 3101, admin: 3102 });
+  assert.deepEqual(slotPorts(4), { api: 3400, storefront: 3401, admin: 3402 });
 });
 
 await test('pickSlot uses the default slot when its ports are free', async () => {
@@ -53,12 +53,12 @@ await test('pickSlot uses the default slot when its ports are free', async () =>
 
 await test('pickSlot moves the whole slot when only one of its ports is busy', async () => {
   const picked = await pickSlot(freeExcept([3001]));
-  assert.deepEqual(picked, { slot: 1, ports: { api: 3100, storefront: 3101 } });
+  assert.deepEqual(picked, { slot: 1, ports: { api: 3100, storefront: 3101, admin: 3102 } });
 });
 
 await test('pickSlot keeps stepping by 100 while slots are busy', async () => {
   const picked = await pickSlot(freeExcept([3000, 3101, 3200]));
-  assert.deepEqual(picked, { slot: 3, ports: { api: 3300, storefront: 3301 } });
+  assert.deepEqual(picked, { slot: 3, ports: { api: 3300, storefront: 3301, admin: 3302 } });
 });
 
 await test('pickSlot returns null when every slot is busy', async () => {
@@ -89,8 +89,9 @@ await test('isPortFree reports a port as free once its listener is gone', async 
   assert.equal(await isPortFree(server.port), true);
 });
 
-await test('formatLinks lists the API and storefront URLs of the slot', () => {
+await test('formatLinks lists the API, storefront and admin URLs of the slot', () => {
   const links = formatLinks(slotPorts(1));
   assert.match(links, /API\s+http:\/\/127\.0\.0\.1:3100/);
   assert.match(links, /Storefront\s+http:\/\/127\.0\.0\.1:3101/);
+  assert.match(links, /Admin\s+http:\/\/127\.0\.0\.1:3102/);
 });
