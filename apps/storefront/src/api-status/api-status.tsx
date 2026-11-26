@@ -8,6 +8,7 @@ import type { ApiStatus as Status } from './get-api-status';
 const LABELS: Record<Status, string> = {
   ok: 'API працює',
   degraded: 'API працює з обмеженнями',
+  'database-down': 'API працює, але база даних недоступна',
   unavailable: 'API недоступний',
 };
 
