@@ -1,0 +1,71 @@
+name: Terraform
+
+# Static checks only: no AWS credentials are used here. `terraform plan` against AWS is added
+# once the bootstrap stack is applied (GitHub OIDC role, see infra/README.md).
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Runs on every PR (not only infra/ changes), so it can be a required check.
+  terraform:
+    name: terraform
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    env:
+      # Plugins must live in the workspace: each docker:// step is a new container.
+      TFLINT_PLUGIN_DIR: /github/workspace/.tflint.d
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: terraform fmt
+        uses: docker://hashicorp/terraform:1.17.2@sha256:6e9c1e647c31a960dc9b59e13272f9111d90010c10b717f77ffb324767660475
+        with:
+          args: fmt -check -recursive -diff infra
+
+      - name: terraform init (no backend)
+        uses: docker://hashicorp/terraform:1.17.2@sha256:6e9c1e647c31a960dc9b59e13272f9111d90010c10b717f77ffb324767660475
+        with:
+          args: -chdir=infra/bootstrap init -backend=false -input=false -lockfile=readonly
+
+      - name: terraform validate
+        uses: docker://hashicorp/terraform:1.17.2@sha256:6e9c1e647c31a960dc9b59e13272f9111d90010c10b717f77ffb324767660475
+        with:
+          args: -chdir=infra/bootstrap validate
+
+      # Mock providers: checks the stack's logic without AWS credentials.
+      - name: terraform test
+        uses: docker://hashicorp/terraform:1.17.2@sha256:6e9c1e647c31a960dc9b59e13272f9111d90010c10b717f77ffb324767660475
+        with:
+          args: -chdir=infra/bootstrap test
+
+      - name: tflint init
+        uses: docker://ghcr.io/terraform-linters/tflint:v0.66.0@sha256:65b9944a9274c4989492c1d79998c2801664bf8a55fddb4bd3a9e6d73a006ddc
+        env:
+          GITHUB_TOKEN: ${{ github.token }} # avoids API rate limits when downloading the ruleset
+        with:
+          args: --chdir=infra --init
+
+      - name: tflint
+        uses: docker://ghcr.io/terraform-linters/tflint:v0.66.0@sha256:65b9944a9274c4989492c1d79998c2801664bf8a55fddb4bd3a9e6d73a006ddc
+        with:
+          args: --chdir=infra --recursive --format compact
+
+      # Same digest-pinned Trivy image as docker-build (see ci.yml for why not trivy-action).
+      - name: Trivy misconfiguration scan
+        uses: docker://aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
+        with:
+          args: >-
+            config infra --ignorefile .trivyignore --severity MEDIUM,HIGH,CRITICAL
+            --exit-code 1

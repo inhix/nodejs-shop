@@ -25,5 +25,7 @@ it is built this way, so a later reader (or reviewer) does not have to guess or 
 | [0006](0006-redis-and-node-redis.md) | Redis 7.2 OSS with the node-redis client | Accepted |
 | [0007](0007-contracts-pipeline.md) | Contracts pipeline: Zod -> OpenAPI -> generated client | Accepted |
 | [0008](0008-nextjs-frontends.md) | Next.js App Router for the storefront and admin | Accepted |
+| [0009](0009-terraform.md) | Terraform for AWS infrastructure | Accepted |
+| [0010](0010-aws-access-model.md) | AWS access model: one account, short-lived credentials only | Accepted |
 
 Planned topics are listed in `docs/PROJECT_BRIEF.md`, section 11.

@@ -42,6 +42,7 @@ separately and returns 503 when Postgres is unreachable.
 ```
 apps/        api (NestJS), storefront and admin (Next.js)
 packages/    contracts (Zod + OpenAPI), api-client (generated), config-ts, config-eslint; ui to follow
+infra/       Terraform: bootstrap stack (state, cost alerts, GitHub OIDC); see infra/README.md
 docs/        project brief, ADRs, vendor API docs, runbooks
 ```
 
