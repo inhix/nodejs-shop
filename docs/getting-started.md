@@ -84,8 +84,8 @@ pnpm install                           # also installs the git hooks (husky)
 cp .env.example .env                   # local-only values; never commit .env
 ```
 
-The API and the storefront dev servers both read this root `.env`. The defaults work as they
-are.
+The API, the storefront dev servers, and Docker Compose all read this root `.env`. The defaults
+work as they are. Create `.env` **before** step 4: `pnpm infra:up` refuses to start without it.
 
 ## 4. Start the infrastructure
 
@@ -94,6 +94,11 @@ pnpm infra:up                          # Postgres and Redis, waits until both ar
 ```
 
 The first run downloads the images. Data persists in a Docker volume between runs.
+
+Postgres takes its user, password, and database name from `.env` only when the volume is first
+created, and keeps them afterwards. If you later change those values in `.env`, change
+`DATABASE_URL` to match, or recreate the local database with `pnpm infra:reset && pnpm infra:up`
+(this deletes local data). `pnpm dev` checks the login before starting and tells you which.
 
 ## 5. Run the apps
 
@@ -179,3 +184,8 @@ After pulling changes, run `pnpm install` again; if `.nvmrc` changed, run `fnm i
 | `EADDRINUSE` when running a single app (`pnpm --filter …`) | Single apps use fixed ports. Stop the other server, or change `PORT` and `API_URL` in `.env` (API) or run `STOREFRONT_PORT=<port> pnpm --filter @shop/storefront dev`. |
 | API exits with a list of invalid variables                 | `.env` is missing or incomplete. Compare it with `.env.example`.                                                                                       |
 | `/health/ready` returns 503                                | Postgres is down: run `pnpm infra:up` and check `docker compose ps`.                                                                                   |
+| `pnpm infra:up`: `required variable POSTGRES_PASSWORD is missing a value` | There is no `.env`: `cp .env.example .env`, then run it again.                                                                          |
+| `[dev] Cannot start: There is no .env file` / `DATABASE_URL is missing` | Create `.env` from `.env.example`, or add the lines your `.env` is missing.                                                              |
+| `[dev] Cannot start: Postgres is not reachable`            | Run `pnpm infra:up`. If it fails with "port is already allocated", see the row above.                                                                  |
+| `[dev] Cannot start: Postgres rejected DATABASE_URL` (`password authentication failed`) | The database was created with other credentials than `DATABASE_URL` now has (for example, `pnpm infra:up` ran before `.env` existed). Set `DATABASE_URL` to the values it was created with, or, if local data can go, `pnpm infra:reset && pnpm infra:up`. |
+| Storefront shows «API недоступний»                          | Run `pnpm dev` again and read the `[dev]` lines; check `curl <API link>/health/ready`, which says whether Postgres or Redis is down.                    |
