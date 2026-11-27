@@ -50,11 +50,11 @@ States used only when an order does not complete:
 ### Main flow
 
 Almost every order follows this path. A card order waits for payment; a COD order skips it,
-and a card order whose customer switches to COD joins the COD path.
+and a card order whose customer switches to COD joins the COD path. Both paths meet at
+`fulfilling` and continue the same way to `completed`.
 
 ```mermaid
 stateDiagram-v2
-    direction LR
     [*] --> pending_payment: order_placed (card)
     [*] --> confirmed: order_placed (COD)
     pending_payment --> paid: payment_succeeded
