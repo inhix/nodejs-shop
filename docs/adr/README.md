@@ -27,5 +27,6 @@ it is built this way, so a later reader (or reviewer) does not have to guess or 
 | [0008](0008-nextjs-frontends.md) | Next.js App Router for the storefront and admin | Accepted |
 | [0009](0009-terraform.md) | Terraform for AWS infrastructure | Accepted |
 | [0010](0010-aws-access-model.md) | AWS access model: one account, short-lived credentials only | Accepted |
+| [0011](0011-order-state-machine.md) | Order state machine | Accepted |
 
 Planned topics are listed in `docs/PROJECT_BRIEF.md`, section 11.

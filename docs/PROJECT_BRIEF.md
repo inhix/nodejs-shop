@@ -171,37 +171,22 @@ parallel with development. Sandboxes are sufficient for building and demoing.
 
 ### Core entities
 
-users, addresses, sessions; categories, products, product_variants (SKU, price, stock,
-JSONB attributes), product_images; carts, cart_items; orders, order_items (with price and
-name snapshots); payments, payment_events (processed webhook IDs); inventory_reservations;
-discount_codes; shipments, nova_poshta_cities, nova_poshta_branches; fiscal_receipts;
-outbox_events; audit_log.
+users, addresses (sessions live in Redis); categories, products, product_variants (SKU,
+price, JSONB attributes), product_images; stock_levels, inventory_reservations; carts,
+cart_items; discount_codes, discount_redemptions; orders, order_items (with price and name
+snapshots), order_status_history; payments, payment_events (processed webhook IDs), refunds;
+shipments, nova_poshta_cities, nova_poshta_branches; fiscal_receipts; outbox_events;
+audit_log.
 
-The full ERD lives in `docs/architecture.md` (Mermaid) and is produced in Phase 1.
+The full ERD, table ownership per module, and key constraints are in `docs/architecture.md`.
 
 ### Order state machine
 
-```mermaid
-stateDiagram-v2
-    [*] --> pending_payment: card order
-    [*] --> awaiting_shipment: COD order
-    pending_payment --> paid: verified webhook
-    pending_payment --> cancelled: payment failed / reservation expired
-    paid --> fulfilling
-    awaiting_shipment --> fulfilling
-    fulfilling --> shipped: waybill created
-    shipped --> delivered
-    shipped --> returned: COD not collected
-    delivered --> refunded
-    paid --> refunded
-    cancelled --> [*]
-    refunded --> [*]
-    returned --> [*]
-    delivered --> [*]
-```
-
-Transitions are enforced in one place in the orders module. Exact states may be refined
-in the Phase 1 ADR.
+Card orders go `pending_payment -> paid -> fulfilling -> shipped -> delivered`; COD orders
+start at `confirmed` and skip payment. A failed payment leaves the order in
+`pending_payment` so the customer can retry or switch to COD. Terminal states are
+`cancelled`, `refunded` and `returned`. States, transitions and triggers are defined in
+[ADR 0011](adr/0011-order-state-machine.md) and enforced in one place in the orders module.
 
 ### Decisions reviewers will probe
 
@@ -363,15 +348,17 @@ foundation is in place.
 ADRs are numbered in the order they are accepted; the index is `docs/adr/README.md`.
 Accepted so far: modular monolith, monorepo with pnpm and Turborepo, NestJS on Fastify,
 PostgreSQL, Drizzle over Prisma, Redis and node-redis, contracts pipeline, Next.js frontends,
-Terraform, AWS access model.
+Terraform, AWS access model, order state machine.
 
 Planned topics (unordered): session-based auth · payment provider abstraction (mono + LiqPay,
-in-house clients) · fiscalization via Checkbox · Nova Poshta and shipping abstraction · order state machine · local AWS emulation ·
+in-house clients) · fiscalization via Checkbox · Nova Poshta and shipping abstraction · local AWS emulation ·
 AWS with ECS Fargate · no Kubernetes in production · NAT and networking strategy
 
 ## 12. Open questions
 
 - Legal entity (FOP or LLC) and resulting fiscal obligations: confirm with an accountant.
+- Whether COD orders need our own fiscal receipt, or Nova Poshta's cash collection covers it:
+  confirm with an accountant.
 - Exact product categories and attributes for the seed catalog.
 - Whether staging runs continuously or on demand.
 - Final domain name (needed for SES verification and acquirer onboarding).

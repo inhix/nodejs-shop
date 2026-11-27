@@ -54,8 +54,8 @@ docs/             PROJECT_BRIEF.md, adr/, vendor/, runbooks/, architecture.md
 - Order items snapshot product name, SKU, and unit price at purchase time.
 - Order status changes only through the order state machine in the orders module.
   Card orders: pending_payment -> paid -> fulfilling -> shipped -> delivered.
-  COD orders skip pending_payment; uncollected COD parcels end as returned.
-  Terminal states: cancelled, refunded, returned.
+  COD orders start at confirmed (skipping pending_payment); uncollected COD parcels end as
+  returned. Terminal states: cancelled, refunded, returned. Full table in ADR 0011.
 - Stock reservation runs inside a transaction with row locking (Drizzle `.for('update')`).
   Reservations expire via a scheduled job.
 - Payment status changes only from verified webhooks, never from client redirects.
