@@ -265,12 +265,14 @@ erDiagram
     payments {
         uuid id PK
         uuid order_id FK
-        text provider "monobank | liqpay"
-        text provider_ref "UK with provider"
+        text method "card | cod"
+        text provider "monobank | liqpay | nova_poshta"
+        text provider_ref "UK with provider, nullable for COD"
         text status "created | processing | succeeded | failed | expired"
         int amount
         char currency
         timestamptz provider_modified_at "stale-update check"
+        timestamptz settled_at "money reached our account"
         text failure_reason
     }
     payment_events {
@@ -284,7 +286,7 @@ erDiagram
     refunds {
         uuid id PK
         uuid order_id FK
-        uuid payment_id FK "nullable for COD"
+        uuid payment_id FK
         text status "requested | processing | succeeded | failed"
         int amount
         char currency
@@ -374,7 +376,8 @@ Rules that must always hold are enforced by the database, not only in code (ADR 
 - **Statuses:** a `CHECK` on every status column; for `orders.status` a test asserts it
   matches the state machine in code.
 - **Payments:** `UNIQUE (provider, provider_ref)`; a partial unique index allows at most one
-  `succeeded` payment per order.
+  `succeeded` payment per order; a `CHECK` pairs `method = 'cod'` with
+  `provider = 'nova_poshta'` and `card` with the card providers.
 - **Webhooks:** `UNIQUE (provider, dedup_key)` on `payment_events`, so a duplicate webhook
   fails the insert and is skipped.
 - **Refunds:** full refunds only in v1, so a partial unique index allows one refund per order
@@ -425,6 +428,20 @@ The webhook handler verifies the signature, records the payment status and appli
 events and responds. It calls no external service. Doing the order transition in the same
 transaction, not through an event, keeps the window for a late payment as small as possible.
 
+### Cash on delivery
+
+A COD order gets a `payments` row (`method = 'cod'`, `status = 'created'`) in the
+transaction that places it, so every order has a payment record and every refund points to
+one. The customer cannot collect a COD parcel without paying the carrier, so when shipping
+reports the parcel delivered, payments marks the COD payment `succeeded`. `settled_at` is
+set when Nova Poshta's transfer of the collected cash reaches us; how we learn that is
+defined from the Nova Poshta docs in Phase 4.
+
+A scheduled reconciliation job in payments flags COD payments that are `succeeded` but not
+settled after a configured number of days, for staff to follow up with the carrier. This is
+a money question, not an order one: the order's status never waits for settlement, just as
+it never waits for a card acquirer's payout.
+
 ### Reservation expiry
 
 The expiry job in the orders module finds card orders in `pending_payment` whose
@@ -449,6 +466,6 @@ BullMQ; consumers are idempotent.
 | `order.refunded` | orders | notifications |
 | `payment.succeeded`, `payment.failed` | payments | notifications |
 | `refund.succeeded` | payments | orders (applies `refund_completed`), fiscalization (return receipt) |
-| `shipment.accepted`, `shipment.delivered`, `shipment.returned` | shipping | orders (applies the parcel events), inventory (consumes reservations on accepted) |
+| `shipment.accepted`, `shipment.delivered`, `shipment.returned` | shipping | orders (applies the parcel events), inventory (consumes reservations on accepted); payments (marks the COD payment succeeded on delivered) |
 
 The exact list grows with the phases that build each consumer.

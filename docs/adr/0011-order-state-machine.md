@@ -152,6 +152,11 @@ events (receipts, emails, stock changes, waybills) are defined in the phases tha
 - **A card parcel the customer never collects** stays `shipped` (the shipment's own status
   shows it returning) until it is back with us, then goes to `refund_pending`. `returned` is
   for COD only, because no money was taken.
+- **The order status tracks the goods, not the money.** Payment and settlement live in the
+  payments module, as most commerce platforms separate order and payment status. For COD,
+  `delivered` means the customer has paid the carrier, because the parcel is not handed
+  over otherwise. Whether the carrier has passed the cash on to us is tracked on the COD
+  payment and reconciled there; it adds no order state, and `completed` does not wait for it.
 - **`shipped` means the carrier has the parcel.** Creating a Nova Poshta waybill does not
   move the order; the tracking job (or staff) does once the carrier accepts the parcel.
 - **Concurrent transitions are compare-and-set:** `UPDATE orders SET status = :to ... WHERE
