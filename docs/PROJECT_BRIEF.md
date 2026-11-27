@@ -182,10 +182,12 @@ The full ERD, table ownership per module, and key constraints are in `docs/archi
 
 ### Order state machine
 
-Card orders go `pending_payment -> paid -> fulfilling -> shipped -> delivered`; COD orders
-start at `confirmed` and skip payment. A failed payment leaves the order in
-`pending_payment` so the customer can retry or switch to COD. Terminal states are
-`cancelled`, `refunded` and `returned`. States, transitions and triggers are defined in
+Card orders go `pending_payment -> paid -> fulfilling -> shipped -> delivered -> completed`;
+COD orders start at `confirmed` and skip payment. An order completes when the return period
+after delivery ends. A failed payment leaves the order in `pending_payment` so the customer
+can retry or switch to COD. Cancellations, returns and refunds are side branches; every
+refund passes through `refund_pending`, which blocks fulfilment and shipping until the
+refund is confirmed. States, transitions and triggers are defined in
 [ADR 0011](adr/0011-order-state-machine.md) and enforced in one place in the orders module.
 
 ### Decisions reviewers will probe

@@ -444,6 +444,8 @@ BullMQ; consumers are idempotent.
 | `order.paid` | orders | fiscalization (sale receipt), notifications |
 | `order.cancelled` | orders | notifications |
 | `order.shipped`, `order.delivered`, `order.returned` | orders | notifications; inventory (stock back on `returned`) |
+| `order.completed` | orders | none yet (reports and review requests later) |
+| `order.refund_pending` | orders | payments (creates the refund); inventory (releases the reservation, or returns stock if the goods came back) |
 | `order.refunded` | orders | notifications |
 | `payment.succeeded`, `payment.failed` | payments | notifications |
 | `refund.succeeded` | payments | orders (applies `refund_completed`), fiscalization (return receipt) |
