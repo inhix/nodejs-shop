@@ -175,7 +175,7 @@ users, addresses (sessions live in Redis); categories, products, product_variant
 price, JSONB attributes), product_images; stock_levels, inventory_reservations; carts,
 cart_items; discount_codes, discount_redemptions; orders, order_items (with price and name
 snapshots), order_status_history; payments, payment_events (processed webhook IDs), refunds;
-shipments, nova_poshta_cities, nova_poshta_branches; fiscal_receipts; outbox_events;
+shipments, delivery_cities, pickup_points; fiscal_receipts; outbox_events;
 audit_log.
 
 The full ERD, table ownership per module, and key constraints are in `docs/architecture.md`.

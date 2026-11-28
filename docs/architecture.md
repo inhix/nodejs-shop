@@ -37,7 +37,7 @@ exported service, which may take the caller's transaction, or reacts to its even
 | checkout | `discount_codes`, `discount_redemptions` |
 | orders | `orders`, `order_items`, `order_status_history` |
 | payments | `payments`, `payment_events`, `refunds` |
-| shipping | `shipments`, `nova_poshta_cities`, `nova_poshta_branches` |
+| shipping | `shipments`, `delivery_cities`, `pickup_points` |
 | fiscalization | `fiscal_receipts` |
 | notifications | none yet |
 | platform (shared infrastructure) | `outbox_events`, `audit_log` |
@@ -91,9 +91,9 @@ erDiagram
     discount_codes ||--o{ discount_redemptions : redeemed_as
     payments ||--o{ payment_events : updated_by
     payments ||--o{ refunds : returned_by
-    nova_poshta_cities ||--o{ nova_poshta_branches : has
-    nova_poshta_branches ||--o{ orders : delivers_to
-    nova_poshta_branches ||--o{ addresses : saved_as
+    delivery_cities ||--o{ pickup_points : has
+    pickup_points ||--o{ orders : delivers_to
+    pickup_points ||--o{ addresses : saved_as
 ```
 
 `outbox_events` and `audit_log` refer to rows of any module by type and ID, without foreign
@@ -119,7 +119,7 @@ erDiagram
     addresses {
         uuid id PK
         uuid user_id FK
-        uuid branch_id FK "nova_poshta_branches"
+        uuid pickup_point_id FK "pickup_points"
         text recipient_name
         text recipient_phone "E.164"
         bool is_default "one per user"
@@ -233,7 +233,7 @@ erDiagram
         text customer_email
         text customer_phone "E.164"
         text customer_name
-        uuid branch_id FK "nova_poshta_branches"
+        uuid pickup_point_id FK "pickup_points"
         jsonb delivery_snapshot "city and branch as at purchase"
         char currency
         int subtotal_amount
@@ -299,7 +299,7 @@ erDiagram
 
 ```mermaid
 erDiagram
-    nova_poshta_cities ||--o{ nova_poshta_branches : has
+    delivery_cities ||--o{ pickup_points : has
     orders ||--o{ shipments : shipped_as
     orders ||--o{ fiscal_receipts : receipted_by
     payments |o--o| fiscal_receipts : sale_receipt
@@ -313,16 +313,18 @@ erDiagram
         int cod_amount "nullable, COD only"
         timestamptz last_tracked_at
     }
-    nova_poshta_cities {
+    delivery_cities {
         uuid id PK
-        text provider_ref UK
+        text carrier "nova_poshta"
+        text provider_ref "UK with carrier"
         jsonb name "uk, en"
         bool is_active
     }
-    nova_poshta_branches {
+    pickup_points {
         uuid id PK
         uuid city_id FK
-        text provider_ref UK
+        text carrier "nova_poshta"
+        text provider_ref "UK with carrier"
         text kind "branch | locker"
         jsonb address "uk, en"
         bool is_active
@@ -388,8 +390,11 @@ Rules that must always hold are enforced by the database, not only in code (ADR 
   its cookie token, never the token itself.
 - **Catalog:** `sku` and slugs are unique among all rows, deleted ones included, so an old
   order's SKU never points to a different product.
-- **Nova Poshta directory:** the nightly sync marks branches and cities inactive instead of
-  deleting them, so saved addresses and old orders keep their references.
+- **Carrier directories:** `delivery_cities` and `pickup_points` hold every carrier's cities
+  and pickup points (staffed branches and parcel lockers), with `UNIQUE (carrier,
+  provider_ref)`, so orders and addresses use one `pickup_point_id` whatever the carrier. The
+  nightly sync marks rows inactive instead of deleting them, so saved addresses and old
+  orders keep their references.
 
 ## How modules communicate
 
